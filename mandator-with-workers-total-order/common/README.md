@@ -1,0 +1,1 @@
+```common``` package defines the data structures and operations common to ```client```, ```replica``` and ```worker```
