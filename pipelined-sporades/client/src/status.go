@@ -2,8 +2,8 @@ package src
 
 import (
 	"fmt"
-	"paxos_raft/common"
-	"paxos_raft/proto"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"time"
 )
 

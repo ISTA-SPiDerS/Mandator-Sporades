@@ -3,8 +3,8 @@ package common
 import (
 	"bytes"
 	"encoding/gob"
-	"paxos_raft/configuration"
-	"paxos_raft/proto"
+	"pipelined-sporades/configuration"
+	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 )

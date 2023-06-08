@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"paxos_raft/common"
-	"paxos_raft/configuration"
-	"paxos_raft/proto"
+	"pipelined-sporades/common"
+	"pipelined-sporades/configuration"
+	"pipelined-sporades/proto"
 	"strconv"
 	"sync"
 	"time"
@@ -153,8 +153,8 @@ func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
 	cl.rpcTable[code] = &common.RPCPair{Code: code, Obj: msgObj}
 }
 
-//func (cl *Client) debug(message string, level int) {
-//	if cl.debugOn && level >= cl.debugLevel {
-//		fmt.Printf("%v\n", message)
-//	}
-//}
+func (cl *Client) debug(message string, level int) {
+	if cl.debugOn && level >= cl.debugLevel {
+		fmt.Printf("%v\n", message)
+	}
+}

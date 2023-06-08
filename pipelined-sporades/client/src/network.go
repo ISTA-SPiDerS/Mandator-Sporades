@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"paxos_raft/common"
-	"paxos_raft/proto"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"strconv"
 )
 

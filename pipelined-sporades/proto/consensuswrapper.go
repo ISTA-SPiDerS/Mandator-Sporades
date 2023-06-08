@@ -6,9 +6,9 @@ import (
 	"io"
 )
 
-// paxos wrapper
+// Sporades wrapper
 
-func (t *PaxosConsensus) Marshal(wire io.Writer) error {
+func (t *Sporades) Marshal(wire io.Writer) error {
 	data, err := proto.Marshal(t)
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (t *PaxosConsensus) Marshal(wire io.Writer) error {
 	return nil
 }
 
-func (t *PaxosConsensus) Unmarshal(wire io.Reader) error {
+func (t *Sporades) Unmarshal(wire io.Reader) error {
 
 	var b [8]byte
 	bs := b[:8]
@@ -49,6 +49,6 @@ func (t *PaxosConsensus) Unmarshal(wire io.Reader) error {
 	return nil
 }
 
-func (t *PaxosConsensus) New() Serializable {
-	return new(PaxosConsensus)
+func (t *Sporades) New() Serializable {
+	return new(Sporades)
 }

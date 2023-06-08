@@ -44,11 +44,7 @@ func Deps() error {
 
 // Generate code.
 func Generate() error {
-
-	err := sh.RunV("protoc", "--go_out=./", "./proto/mempool.proto")
-	err = sh.RunV("protoc", "--go_out=./", "./proto/client.proto")
-	err = sh.RunV("protoc", "--go_out=./", "./proto/consensus.proto")
-
+	err := sh.RunV("protoc", "--go_out=./", "./proto/definitions.proto")
 	if err != nil {
 		return err
 	}
@@ -64,7 +60,6 @@ func Test() error {
 // Build binary executables.
 func Build() error {
 	err := sh.RunV("go", "build", "-v", "-o", "./client/bin/client", "./client/")
-	err = sh.RunV("go", "build", "-v", "-o", "./worker/bin/child", "./worker/")
 	err = sh.RunV("go", "build", "-v", "-o", "./replica/bin/replica", "./replica/")
 	if err != nil {
 		return err

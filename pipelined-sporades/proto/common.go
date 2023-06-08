@@ -19,9 +19,9 @@ type Serializable interface {
 */
 
 type MessageCode struct {
-	ClientBatchRpc uint8
-	StatusRPC      uint8
-	PaxosConsensus uint8
+	ClientBatchRpc    uint8
+	StatusRPC         uint8
+	SporadesConsensus uint8
 }
 
 /*
@@ -30,8 +30,8 @@ type MessageCode struct {
 
 func GetRPCCodes() MessageCode {
 	return MessageCode{
-		ClientBatchRpc: 1,
-		StatusRPC:      2,
-		PaxosConsensus: 3,
+		ClientBatchRpc:    1,
+		StatusRPC:         2,
+		SporadesConsensus: 3,
 	}
 }

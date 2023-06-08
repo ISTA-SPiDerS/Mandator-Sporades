@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/montanaflynn/stats"
 	"os"
-	"paxos_raft/proto"
+	"pipelined-sporades/proto"
 	"strconv"
 )
 

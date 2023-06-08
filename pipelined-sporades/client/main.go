@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"paxos_raft/client/src"
-	"paxos_raft/configuration"
+	"pipelined-sporades/client/src"
+	"pipelined-sporades/configuration"
 	"time"
 )
 

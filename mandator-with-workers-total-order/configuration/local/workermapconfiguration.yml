@@ -1,9 +1,0 @@
-# maps each replica with its worker nodes.
-# should be consistent with the configuration.yml
-peers:
-  - name: 1
-    workers: 21,22
-  - name: 2
-    workers: 23,24
-  - name: 3
-    workers: 25,26

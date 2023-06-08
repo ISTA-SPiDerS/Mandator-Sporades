@@ -1,4 +1,4 @@
-module paxos_raft
+module pipelined-sporades
 
 go 1.17
 
