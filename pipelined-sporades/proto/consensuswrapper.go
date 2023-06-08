@@ -8,7 +8,7 @@ import (
 
 // Sporades wrapper
 
-func (t *Sporades) Marshal(wire io.Writer) error {
+func (t *Pipelined_Sporades) Marshal(wire io.Writer) error {
 	data, err := proto.Marshal(t)
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (t *Sporades) Marshal(wire io.Writer) error {
 	return nil
 }
 
-func (t *Sporades) Unmarshal(wire io.Reader) error {
+func (t *Pipelined_Sporades) Unmarshal(wire io.Reader) error {
 
 	var b [8]byte
 	bs := b[:8]
@@ -49,6 +49,6 @@ func (t *Sporades) Unmarshal(wire io.Reader) error {
 	return nil
 }
 
-func (t *Sporades) New() Serializable {
-	return new(Sporades)
+func (t *Pipelined_Sporades) New() Serializable {
+	return new(Pipelined_Sporades)
 }

@@ -44,7 +44,7 @@ message Status {
   Sporades defines the single consensus proto message type
 */
 
-message Sporades {
+message Pipelined_Sporades {
   int32 sender = 1;
   int32 receiver = 2;
   string unique_id = 3; // to specify the fall back block id to which the vote async is for

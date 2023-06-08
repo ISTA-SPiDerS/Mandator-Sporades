@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"paxos_raft/common"
-	"paxos_raft/configuration"
-	"paxos_raft/proto"
+	"pipelined-sporades/common"
+	"pipelined-sporades/configuration"
+	"pipelined-sporades/proto"
 	"strconv"
 	"sync"
 	"time"
@@ -191,6 +191,10 @@ func (rp *Replica) getNodeType(id int32) string {
 		return "replica"
 	}
 	panic("should not happen")
+}
+
+func (rp *Replica) handleSporadesConsensus(message *proto.Pipelined_Sporades) {
+
 }
 
 // debug printing

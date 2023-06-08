@@ -3,7 +3,7 @@ package src
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	"paxos_raft/proto"
+	"pipelined-sporades/proto"
 )
 
 /*

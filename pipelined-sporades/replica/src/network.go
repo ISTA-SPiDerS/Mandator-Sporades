@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"paxos_raft/common"
-	"paxos_raft/proto"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"strconv"
 )
 
@@ -162,19 +162,15 @@ func (rp *Replica) Run() {
 				rp.handleClientBatch(clientBatch)
 				break
 
-			case rp.messageCodes.PaxosConsensus:
-				paxosConsensusMessage := replicaMessage.Obj.(*proto.PaxosConsensus)
-				//rp.debug("Paxos consensus message from "+fmt.Sprintf("%#v", paxosConsensusMessage.Sender), 0)
-				rp.handlePaxosConsensus(paxosConsensusMessage)
+			case rp.messageCodes.SporadesConsensus:
+				sporadesConsensusMessage := replicaMessage.Obj.(*proto.Pipelined_Sporades)
+				//rp.debug("Sporades consensus message from "+fmt.Sprintf("%#v", sporadesConsensusMessage.Sender), 0)
+				rp.handleSporadesConsensus(sporadesConsensusMessage)
 				break
 
 			}
-			break
-		case clientRespBatches := <-rp.requestsOut:
-			rp.sendClientResponses(clientRespBatches)
-			break
-		}
 
+		}
 	}
 }
 
