@@ -41,24 +41,25 @@ message Status {
 }
 
 /*
-  Sporades defines the single consensus proto message type
+  Pipelined_Sporades defines the single consensus proto message type
 */
 
 message Pipelined_Sporades {
   int32 sender = 1;
   int32 receiver = 2;
   string unique_id = 3; // to specify the fall back block id to which the vote async is for
-  int32 type = 4; // 1-propose, 2-vote, 3-timeout, 4-propose-async, 5-vote-async, 6-timeout-internal, 7-consensus-external-request, 8-consensus-external-response, 9-fallback-complete
-  string note = 5;
+  int32 type = 4; // 1-propose, 2-vote, 3-timeout, 4-propose-async, 5-vote-async, 6-timeout-internal, 7-consensus-external-request, 8-consensus-external-response, 9-fallback-complete, 10-new-view
+  string note = 5; //for future extensions
   int32 v = 6 ; // view number
   int32 r = 7;// round number
   message Block {
     string id = 1;
     int32 v = 2 ; // view number
     int32 r = 3;// round number
-    Block parent = 4;
-    repeated ReplicaBatch commands = 5;
-    int32 level = 6; // for the fallback mode
+    string parentId = 4; // id of the parent
+    Block parent = 5; // length of recursion depends on the message type
+    repeated ReplicaBatch commands = 6;
+    int32 level = 7; // for the fallback mode
   }
   Block blockHigh = 8;
   Block blockNew = 9;

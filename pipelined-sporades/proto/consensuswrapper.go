@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// Sporades wrapper
+// Pipelined_Sporades wrapper
 
 func (t *Pipelined_Sporades) Marshal(wire io.Writer) error {
 	data, err := proto.Marshal(t)
