@@ -28,7 +28,7 @@ type OutgoingRPC struct {
 }
 
 /*
-	Returns the self ip:port
+	Returns the ip:port of self
 */
 
 func GetAddress(nodes []configuration.Instance, name int32) string {
@@ -96,7 +96,6 @@ func (t *TimerWithCancel) Cancel() {
 		// Success
 		break
 	default:
-		//Unsuccessful
 		break
 	}
 

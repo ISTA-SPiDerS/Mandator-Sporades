@@ -1,7 +1,6 @@
 package configuration
 
 import (
-	"errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
@@ -11,18 +10,6 @@ import (
 /*
 	config.go implements the methods to parse a config file and creates the instance structs
 */
-
-var (
-
-	// ErrNoInstance is returned when an instance definition is expected but missing
-	ErrNoInstance = errors.New("missing instance definition")
-
-	// ErrInvalidInstanceDefinition is returned when an invalid instance definition is discovered, e.g. an empty name or address
-	ErrInvalidInstanceDefinition = errors.New("invalid instance definition")
-
-	// ErrDuplicateInstance is returned when there are multiple definitions for the same instance
-	ErrDuplicateInstance = errors.New("duplicate instance")
-)
 
 // Instance describes a single  instance connection information
 type Instance struct {
@@ -36,7 +23,7 @@ type InstanceConfig struct {
 	Clients []Instance `yaml:"clients"`
 }
 
-// NewInstanceConfig loads a  instance configuration from given file
+// NewInstanceConfig loads an instance configuration from given file
 func NewInstanceConfig(fname string, name int64) (*InstanceConfig, error) {
 	var cfg InstanceConfig
 	data, err := ioutil.ReadFile(fname)

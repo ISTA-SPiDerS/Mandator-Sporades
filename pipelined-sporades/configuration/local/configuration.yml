@@ -12,13 +12,13 @@ peers:
   - name: 5
     address: 0.0.0.0:10004
 clients:
-  - name: 11
+  - name: 21
     address: 0.0.0.0:11000
-  - name: 12
+  - name: 22
     address: 0.0.0.0:11001
-  - name: 13
+  - name: 23
     address: 0.0.0.0:11002
-  - name: 14
+  - name: 24
     address: 0.0.0.0:11003
-  - name: 15
+  - name: 25
     address: 0.0.0.0:11004
