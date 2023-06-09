@@ -27,7 +27,7 @@ type Client struct {
 	outgoingReplicaWriterMutexs map[int32]*sync.Mutex   // for mutual exclusion for each buffio.writer outgoingReplicaWriters
 
 	rpcTable     map[uint8]*common.RPCPair // map each RPC type (message type) to its unique number
-	incomingChan chan *common.RPCPair      // used to collect ClientBatch messages for responses and Status messages for responses
+	incomingChan chan *common.RPCPair      // used to collect ClientBatch messages for responses and Status messages
 
 	messageCodes proto.MessageCode
 	logFilePath  string // the path to write the requests and responses time, used for sanity checks
@@ -119,7 +119,7 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clie
 		receivedNumMutex:    &sync.Mutex{},
 	}
 
-	//cl.debug("Created a new client instance", 0)
+	cl.debug("Created a new client instance", 0)
 
 	// initialize replicaAddrList
 	for i := 0; i < len(cfg.Peers); i++ {
@@ -131,10 +131,11 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clie
 	/*
 		Register the rpcs
 	*/
+
 	cl.RegisterRPC(new(proto.ClientBatch), cl.messageCodes.ClientBatchRpc)
 	cl.RegisterRPC(new(proto.Status), cl.messageCodes.StatusRPC)
 
-	//cl.debug("Registered RPCs in the table", 0)
+	cl.debug("Registered RPCs in the table", 0)
 
 	// Set random seed
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -152,6 +153,10 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clie
 func (cl *Client) RegisterRPC(msgObj proto.Serializable, code uint8) {
 	cl.rpcTable[code] = &common.RPCPair{Code: code, Obj: msgObj}
 }
+
+/*
+	print debug messages
+*/
 
 func (cl *Client) debug(message string, level int) {
 	if cl.debugOn && level >= cl.debugLevel {

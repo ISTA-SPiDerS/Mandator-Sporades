@@ -12,7 +12,7 @@ import (
 )
 
 /*
-	Upon receiving a client response, add the request to the received requests map
+	Upon receiving a client response, add the request to the received requests map, unless already received before
 */
 
 func (cl *Client) handleClientResponseBatch(batch *proto.ClientBatch) {
@@ -32,14 +32,16 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientBatch) {
 	cl.receivedNumMutex.Lock()
 	cl.numReceivedBatches++
 	cl.receivedNumMutex.Unlock()
-	//cl.debug("Added response Batch with id "+batch.UniqueId, 0)
+	if cl.debugOn {
+		cl.debug("Added response Batch with id "+batch.UniqueId, 0)
+	}
 }
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
 	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to all replicas, and write batch to the correct array in sentRequests
 	start the scheduler that schedules new requests
-	the thread sleeps for test duration and then starts processing the responses. This is to handle inflight responses after the test duration
+	the thread sleeps for a duration and then starts processing the responses. This is to handle inflight responses after the test duration
 */
 
 func (cl *Client) SendRequests() {
@@ -101,8 +103,9 @@ func (cl *Client) startRequestGenerators() {
 						Requests: requests_i,
 						Sender:   int64(cl.clientName),
 					}
-					//cl.debug("Sending "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
-
+					if cl.debugOn {
+						cl.debug("Sending "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
+					}
 					rpcPair := common.RPCPair{
 						Code: cl.messageCodes.ClientBatchRpc,
 						Obj:  &batch,
