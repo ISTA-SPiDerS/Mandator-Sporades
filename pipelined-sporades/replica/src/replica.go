@@ -23,15 +23,17 @@ type Replica struct {
 
 	numReplicas int
 
-	clientAddrList             map[int32]string        // map with the IP:port address of every client
-	incomingClientReaders      map[int32]*bufio.Reader // socket readers for each client
-	outgoingClientWriters      map[int32]*bufio.Writer // socket writer for each client
-	outgoingClientWriterMutexs map[int32]*sync.Mutex   // for mutual exclusion for each buffio.writer outgoingClientWriters
+	clientAddrList             map[int32]string         // map with the IP:port address of every client
+	incomingClientReaders      map[int32]*bufio.Reader  // socket readers for each client
+	outgoingClientWriters      map[int32]*bufio.Writer  // socket writer for each client
+	outgoingClientWriterMutexs map[int32]*sync.Mutex    // for mutual exclusion for each buffio.writer outgoingClientWriters
+	outgoingClientMessageChan  chan *common.OutgoingRPC // buffer for messages that are written to clients
 
-	replicaAddrList             map[int32]string        // map with the IP:port address of every replica node
-	incomingReplicaReaders      map[int32]*bufio.Reader // socket readers for each replica
-	outgoingReplicaWriters      map[int32]*bufio.Writer // socket writer for each replica
-	outgoingReplicaWriterMutexs map[int32]*sync.Mutex   // for mutual exclusion for each buffio.writer outgoingReplicaWriters
+	replicaAddrList             map[int32]string           // map with the IP:port address of every replica node
+	incomingReplicaReaders      map[int32]*bufio.Reader    // socket readers for each replica
+	outgoingReplicaWriters      map[int32]*bufio.Writer    // socket writer for each replica
+	outgoingReplicaWriterMutexs map[int32]*sync.Mutex      // for mutual exclusion for each buffio.writer outgoingReplicaWriters
+	outgoingReplicaMessageChans []chan *common.OutgoingRPC // buffer for messages that are written to replicas
 
 	rpcTable     map[uint8]*common.RPCPair // map each RPC type (message type) to its unique number
 	messageCodes proto.MessageCode
@@ -43,22 +45,16 @@ type Replica struct {
 	replicaBatchSize int // maximum replica side batch size
 	replicaBatchTime int // maximum replica side batch time in micro seconds
 
-	outgoingMessageChan chan *common.OutgoingRPC // buffer for messages that are written to the wire
-
 	debugOn    bool // if turned on, the debug messages will be printed on the console
 	debugLevel int  // current debug level
 
 	serverStarted bool // to bootstrap
 
-	paxosConsensus *Paxos // Paxos consensus data structs
-	raftConsensus  *Raft  // Raft consensus data structs
-
+	consensus        *SporadesConsensus
 	consensusStarted bool
 	viewTimeout      int // view change timeout in micro seconds
 
 	logPrinted bool // to check if log was printed before
-
-	consAlgo string // raft/paxos
 
 	benchmarkMode int        // 0 for resident K/V store, 1 for redis
 	state         *Benchmark // k/v store
@@ -68,21 +64,17 @@ type Replica struct {
 
 	lastProposedTime time.Time
 
-	requestsIn  chan []*proto.ClientBatch
-	requestsOut chan []*proto.ClientBatch // for raft client responses
-
-	cancel chan bool // to cancel the dummy client requests and the raft failure detector
+	finished bool // to finish consensus
 }
 
-const numOutgoingThreads = 200       // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
-const incomingBufferSize = 100000000 // the size of the buffer which receives all the incoming messages
-const outgoingBufferSize = 100000000 // size of the buffer that collects messages to be written to the wire
+const incomingBufferSize = 1000000 // the size of the buffer which receives all the incoming messages
+const outgoingBufferSize = 1000000 // size of the buffer that collects messages to be written to the wire
 
 /*
 	instantiate a new replica instance, allocate the buffers
 */
 
-func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, consAlgo string, benchmarkMode int, keyLen int, valLen int, pipelineLength int) *Replica {
+func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, benchmarkMode int, keyLen int, valLen int, pipelineLength int) *Replica {
 	rp := Replica{
 		name:          name,
 		listenAddress: common.GetAddress(cfg.Peers, name),
@@ -92,11 +84,13 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		incomingClientReaders:      make(map[int32]*bufio.Reader),
 		outgoingClientWriters:      make(map[int32]*bufio.Writer),
 		outgoingClientWriterMutexs: make(map[int32]*sync.Mutex),
+		outgoingClientMessageChan:  make(chan *common.OutgoingRPC, outgoingBufferSize),
 
 		replicaAddrList:             make(map[int32]string),
 		incomingReplicaReaders:      make(map[int32]*bufio.Reader),
 		outgoingReplicaWriters:      make(map[int32]*bufio.Writer),
 		outgoingReplicaWriterMutexs: make(map[int32]*sync.Mutex),
+		outgoingReplicaMessageChans: make([]chan *common.OutgoingRPC, len(cfg.Peers)),
 
 		rpcTable:     make(map[uint8]*common.RPCPair),
 		messageCodes: proto.GetRPCCodes(),
@@ -108,21 +102,20 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		replicaBatchSize: replicaBatchSize,
 		replicaBatchTime: replicaBatchTime,
 
-		outgoingMessageChan: make(chan *common.OutgoingRPC, outgoingBufferSize),
-		debugOn:             debugOn,
-		debugLevel:          debugLevel,
-		serverStarted:       false,
-		consensusStarted:    false,
-		viewTimeout:         viewTimeout,
-		logPrinted:          false,
-		consAlgo:            consAlgo,
-		benchmarkMode:       benchmarkMode,
-		state:               Init(benchmarkMode, name, keyLen, valLen),
-		incomingRequests:    make([]*proto.ClientBatch, 0),
-		pipelineLength:      pipelineLength,
-		requestsIn:          make(chan []*proto.ClientBatch),
-		requestsOut:         make(chan []*proto.ClientBatch, incomingBufferSize),
-		cancel:              make(chan bool, 7),
+		debugOn:    debugOn,
+		debugLevel: debugLevel,
+
+		serverStarted:    false,
+		consensusStarted: false,
+		viewTimeout:      viewTimeout,
+		logPrinted:       false,
+
+		benchmarkMode:    benchmarkMode,
+		state:            Init(benchmarkMode, name, keyLen, valLen),
+		incomingRequests: make([]*proto.ClientBatch, 0),
+		pipelineLength:   pipelineLength,
+		lastProposedTime: time.Now(),
+		finished:         false,
 	}
 
 	// initialize clientAddrList
@@ -137,6 +130,7 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		int32Name, _ := strconv.ParseInt(cfg.Peers[i].Name, 10, 32)
 		rp.replicaAddrList[int32(int32Name)] = cfg.Peers[i].Address
 		rp.outgoingReplicaWriterMutexs[int32(int32Name)] = &sync.Mutex{}
+		rp.outgoingReplicaMessageChans[i] = make(chan *common.OutgoingRPC, outgoingBufferSize)
 	}
 
 	/*
@@ -144,29 +138,17 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 	*/
 	rp.RegisterRPC(new(proto.ClientBatch), rp.messageCodes.ClientBatchRpc)
 	rp.RegisterRPC(new(proto.Status), rp.messageCodes.StatusRPC)
-	rp.RegisterRPC(new(proto.PaxosConsensus), rp.messageCodes.PaxosConsensus)
+	rp.RegisterRPC(new(proto.Pipelined_Sporades), rp.messageCodes.SporadesConsensus)
 
 	rand.Seed(time.Now().UnixNano() + int64(rp.name))
 
-	//rp.debug("Registered RPCs in the table", 0)
-
-	gAddress := ""
-	for i := 0; i < len(cfg.Peers); i++ {
-		if cfg.Peers[i].Name == strconv.Itoa(int(name)) {
-			gAddress = cfg.Peers[i].GAddress
-			break
-		}
+	if rp.debugOn {
+		rp.debug("Registered RPCs in the table", 0)
 	}
-	if rp.consAlgo == "raft" {
-		rp.raftConsensus = NewRaft(name, *cfg, debugOn, debugLevel, gAddress, int64(len(cfg.Peers)), int64(viewTimeout), logFilePath, rp.requestsIn, rp.requestsOut, &rp, rp.cancel)
-	} else if rp.consAlgo == "paxos" {
-		rp.paxosConsensus = InitPaxosConsensus(name, &rp, pipelineLength)
-	} else {
-		panic("should not happen")
-	}
+	rp.consensus = InitAsyncConsensus(debugLevel, debugOn, rp.numReplicas)
 
 	pid := os.Getpid()
-	fmt.Printf("--Initialized %v replica %v with process id: %v \n", consAlgo, name, pid)
+	fmt.Printf("--Initialized replica %v with process id: %v \n", name, pid)
 
 	return &rp
 }
@@ -193,14 +175,10 @@ func (rp *Replica) getNodeType(id int32) string {
 	panic("should not happen")
 }
 
-func (rp *Replica) handleSporadesConsensus(message *proto.Pipelined_Sporades) {
+//debug printing
 
+func (rp *Replica) debug(s string, i int) {
+	if rp.debugOn && i >= rp.debugLevel {
+		fmt.Print(s + "\n")
+	}
 }
-
-// debug printing
-
-//func (rp *Replica) debug(s string, i int) {
-//	if rp.debugOn && i >= rp.debugLevel {
-//		fmt.Print(s + "\n")
-//	}
-//}
