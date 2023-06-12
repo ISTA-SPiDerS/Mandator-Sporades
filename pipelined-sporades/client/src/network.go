@@ -26,7 +26,9 @@ func (cl *Client) ConnectToReplicas() {
 
 	//connect to replicas
 	for name, address := range cl.replicaAddrList {
-		for true {
+		counter := 0
+		for counter < 3 {
+			counter++
 			conn, err := net.Dial("tcp", address)
 			if err == nil {
 				cl.outgoingReplicaWriters[name] = bufio.NewWriter(conn)
@@ -39,6 +41,10 @@ func (cl *Client) ConnectToReplicas() {
 					cl.debug("Established outgoing connection to "+strconv.Itoa(int(name)), 0)
 				}
 				break
+			} else {
+				if counter == 3 {
+					panic(fmt.Sprintf("%v", err))
+				}
 			}
 		}
 	}
