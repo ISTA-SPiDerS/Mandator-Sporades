@@ -58,7 +58,7 @@ message Pipelined_Sporades {
     int32 r = 3;// round number
     string parentId = 4; // id of the parent
     Block parent = 5; // length of recursion depends on the message type
-    repeated ReplicaBatch commands = 6;
+    ReplicaBatch commands = 6;
     int32 level = 7; // for the fallback mode
   }
   Block blockHigh = 8;
