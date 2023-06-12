@@ -37,8 +37,8 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 	} else if message.Type == 3 {
 		if rp.consensusStarted == false {
 			rp.consensusStarted = true
-			rp.lastProposedTime = time.Now()
-			rp.sendGenesisConsensusVote()
+			rp.sendGenesisConsensusNewView()
+			rp.consensus.startTime = time.Now()
 			if rp.debugOn {
 				rp.debug("started Sporades consensus", 0)
 			}

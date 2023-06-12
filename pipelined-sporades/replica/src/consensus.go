@@ -1,71 +1,75 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 )
 
 /*
-	AsyncConsensus stores the data structures for the consensus
+	SporadesConsensus stores the data structures for the consensus
 */
 
-type AsyncConsensus struct {
-	vCurr           int32                              // current view number
-	rCurr           int32                              // current round number
-	blockHigh       *proto.AsyncConsensus_Block        // the block with the highest round number in which the node received a propose message
-	blockCommit     *proto.AsyncConsensus_Block        // the last block to commit
-	consensusPool   *AsyncConsensusStore               // an id of a consensus block is creator_name.v.r.type.level. type can be r (regular) or f (fallback), level can be 1,2 or -1 (for regular blocks)
-	isAsync         bool                               // true if in fallback mode, and false if in sync mode
-	bFall           map[string][]string                // far storing the fallback block ids: the key is view.level, value is the array of fallback block ids
-	voteReplies     map[string][]*proto.AsyncConsensus // stores the vote messages received in the sync path. The key is v.r, the value is the array of received votes
-	timeoutMessages map[int32][]*proto.AsyncConsensus  // stores the timeout messages for each view, the key is the view number, value is the array of received timeout messages
-	viewTimer       *common.TimerWithCancel            // a timer to set the view timeouts in the acceptors
+type SporadesConsensus struct {
+	vCurr       int32                           // current view number
+	rCurr       int32                           // current round number
+	blockHigh   *proto.Pipelined_Sporades_Block // the block with the highest round number in which the node received a propose message
+	blockCommit *proto.Pipelined_Sporades_Block // the last block to commit
+	isAsync     bool                            // true if in fallback mode, and false if in sync mode
 
-	lastCommittedBlock  *proto.AsyncConsensus_Block // the last committed block
-	lastCommittedRounds []int                       // for each replica, the index of the mempool block that was last committed
-	randomness          []int                       // predefined random leader node indexes (not name) for each view
+	bFall           map[string][]string                    // for storing the fallback block ids: the key is view.level, value is the array of fallback block ids
+	consensusPool   *AsyncConsensusStore                   // an id of a consensus block is creator_name.v.r.type.level. type can be r (regular) or f (fallback), level can be 1,2 or -1 (for regular blocks)
+	voteReplies     map[string][]*proto.Pipelined_Sporades // stores the vote messages received in the sync path. The key is v.r, the value is the array of received votes
+	timeoutMessages map[int32][]*proto.Pipelined_Sporades  // stores the timeout messages for each view, the key is the view number, value is the array of received timeout messages
+	viewTimer       *common.TimerWithCancel                // a timer to set the view timeouts in the acceptors
+
+	lastCommittedBlock *proto.Pipelined_Sporades_Block // the last committed block
+
+	randomness []int // predefined random leader node names for each view
 
 	sentLevel2Block   map[int32]bool // records if level 2 fallback block was sent for view v; key is v
 	startTime         time.Time      // time when the consensus was started
 	lastCommittedTime time.Time      // time when the last consensus block was committed
+	lastProposedTime  time.Time
 }
 
 /*
 	Init Async Consensus Data Structs
 */
 
-func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *AsyncConsensus {
+func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *SporadesConsensus {
 
-	blockHigh := &proto.AsyncConsensus_Block{
+	blockHigh := &proto.Pipelined_Sporades_Block{
 		Id:       "genesis-block",
 		V:        0,
 		R:        0,
+		ParentId: "",
 		Parent:   nil,
 		Commands: nil,
 		Level:    -1,
 	}
 
-	asyncConsensus := AsyncConsensus{
-		vCurr:               0,
-		rCurr:               0,
-		blockHigh:           blockHigh,
-		blockCommit:         blockHigh,
-		consensusPool:       &AsyncConsensusStore{},
-		isAsync:             false,
-		bFall:               make(map[string][]string),
-		voteReplies:         make(map[string][]*proto.AsyncConsensus),
-		timeoutMessages:     make(map[int32][]*proto.AsyncConsensus),
-		lastCommittedBlock:  blockHigh,
-		lastCommittedRounds: make([]int, numReplicas),
-		randomness:          make([]int, 0),
-		sentLevel2Block:     make(map[int32]bool),
+	asyncConsensus := SporadesConsensus{
+		vCurr:           0,
+		rCurr:           0,
+		blockHigh:       blockHigh,
+		blockCommit:     blockHigh,
+		isAsync:         false,
+		bFall:           make(map[string][]string),
+		consensusPool:   &AsyncConsensusStore{},
+		voteReplies:     make(map[string][]*proto.Pipelined_Sporades),
+		timeoutMessages: make(map[int32][]*proto.Pipelined_Sporades),
+
+		lastCommittedBlock: blockHigh,
+		randomness:         make([]int, 0),
+		sentLevel2Block:    make(map[int32]bool),
+		startTime:          time.Now(),
 	}
 
 	// initialize the consensus pool
@@ -73,16 +77,11 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *AsyncCon
 	// add genesis block to the AsyncConsensusStore
 	asyncConsensus.consensusPool.Add(blockHigh)
 
-	// initialize the lastCommittedRounds
-	for i := 0; i < numReplicas; i++ {
-		asyncConsensus.lastCommittedRounds[i] = 0
-	}
-
 	//initialize randomness and sentLevel2Block; assumes 1000000 max view changes, increase the 1000000 if needed
 	s2 := rand.NewSource(42)
 	r2 := rand.New(s2)
 	for i := 0; i < 1000000; i++ {
-		asyncConsensus.randomness = append(asyncConsensus.randomness, (r2.Intn(42))%numReplicas)
+		asyncConsensus.randomness = append(asyncConsensus.randomness, (r2.Intn(42))%numReplicas+1)
 		asyncConsensus.sentLevel2Block[int32(i)] = false
 	}
 
@@ -93,57 +92,50 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *AsyncCon
 	Returns the leader for the view; view leaders are pre-defined
 */
 
-func (rp *Replica) getLeader(round int32, view int32) int32 {
-	leaderIndex := rp.asyncConsensus.randomness[view+10]
-	// find the leader name corresponding to leaderIndex
-	for name, position := range rp.replicaArrayIndex {
-		if position == int(leaderIndex) {
-			return name
-		}
-	}
-	panic("Leader not found for " + strconv.Itoa(int(view)))
+func (rp *Replica) getLeader(view int32) int32 {
+	leaderIndex := rp.consensus.randomness[view+10]
+	return int32(leaderIndex)
 }
 
 /*
-	send the initial consensus vote message for the genesis block
+	send the initial consensus new view message for the genesis block
 */
 
-func (rp *Replica) sendGenesisConsensusVote() {
-	rp.asyncConsensus.startTime = time.Now()
-	rp.asyncConsensus.lastCommittedTime = time.Now()
+func (rp *Replica) sendGenesisConsensusNewView() {
+	rp.consensus.startTime = time.Now()
+	rp.consensus.lastCommittedTime = time.Now()
 
-	//rp.livenessDebug()
+	//send <new-view, vcur , rcur , blockhigh > to leader
+	nextLeader := rp.getLeader(rp.consensus.vCurr)
 
-	//send <vote, v cur , r cur , block high > to leader
-	nextLeader := rp.getLeader(rp.asyncConsensus.rCurr+1, rp.asyncConsensus.vCurr)
-
-	genesisBlock, ok := rp.asyncConsensus.consensusPool.Get("genesis-block")
+	genesisBlock, ok := rp.consensus.consensusPool.Get("genesis-block")
 
 	if !ok {
 		panic("Genesis consensus block not found")
 	}
 
-	bootStrapVote := proto.AsyncConsensus{
+	bootStrapNewView := proto.Pipelined_Sporades{
 		Sender:      rp.name,
 		Receiver:    nextLeader,
 		UniqueId:    "",
-		Type:        2,
+		Type:        10,
 		Note:        "",
-		V:           rp.asyncConsensus.vCurr,
-		R:           rp.asyncConsensus.rCurr,
-		BlockHigh:   rp.makeGreatGrandParentNil(genesisBlock),
+		V:           rp.consensus.vCurr,
+		R:           rp.consensus.rCurr,
+		BlockHigh:   genesisBlock,
 		BlockNew:    nil,
 		BlockCommit: nil,
 	}
 
 	rpcPair := common.RPCPair{
-		Code: rp.messageCodes.AsyncConsensus,
-		Obj:  &bootStrapVote,
+		Code: rp.messageCodes.SporadesConsensus,
+		Obj:  &bootStrapNewView,
 	}
 
 	rp.sendMessage(nextLeader, rpcPair)
-	common.Debug("Sent boot strap consensus vote to "+strconv.Itoa(int(nextLeader)), 0, rp.debugLevel, rp.debugOn)
-
+	if rp.debugOn {
+		rp.debug("Sent boot strap new view vote to "+strconv.Itoa(int(nextLeader)), 0)
+	}
 	// start the timeout
 	rp.setViewTimer()
 }
@@ -154,95 +146,110 @@ func (rp *Replica) sendGenesisConsensusVote() {
 
 func (rp *Replica) setViewTimer() {
 
-	rp.asyncConsensus.viewTimer = common.NewTimerWithCancel(time.Duration(rp.viewTimeout) * time.Microsecond)
-	rp.asyncConsensus.viewTimer.SetTimeoutFuntion(func() {
-		// this function runs in a seperate thread, hence we do not send timeout message in this function, instead send a timeout-internal signal
-		internalTimeoutNotification := proto.AsyncConsensus{
+	rp.consensus.viewTimer = common.NewTimerWithCancel(time.Duration(rp.viewTimeout) * time.Microsecond)
+	rp.consensus.viewTimer.SetTimeoutFuntion(func() {
+		// this function runs in a separate thread, hence we do not send timeout message in this function, instead send a timeout-internal signal
+		internalTimeoutNotification := proto.Pipelined_Sporades{
 			Sender:      rp.name,
 			Receiver:    rp.name,
 			UniqueId:    "",
 			Type:        6,
 			Note:        "",
-			V:           rp.asyncConsensus.vCurr,
-			R:           rp.asyncConsensus.rCurr,
+			V:           rp.consensus.vCurr,
+			R:           rp.consensus.rCurr,
 			BlockHigh:   nil,
 			BlockNew:    nil,
 			BlockCommit: nil,
 		}
 
 		rpcPair := common.RPCPair{
-			Code: rp.messageCodes.AsyncConsensus,
+			Code: rp.messageCodes.SporadesConsensus,
 			Obj:  &internalTimeoutNotification,
 		}
 		rp.sendMessage(rp.name, rpcPair)
-		common.Debug("Sent an internal timeout notification for view "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 4, rp.debugLevel, rp.debugOn)
-
+		if rp.debugOn {
+			rp.debug("Sent an internal timeout notification "+fmt.Sprintf("%v", internalTimeoutNotification), 0)
+		}
 	})
-	rp.asyncConsensus.viewTimer.Start()
+	rp.consensus.viewTimer.Start()
 }
 
 /*
-	Handler for the async consensus messages
+	Handler for the sporades consensus messages
 */
 
-func (rp *Replica) handleAsyncConsensus(message *proto.AsyncConsensus) {
-
-	debugLevel := 0
-
-	if time.Now().Sub(rp.asyncConsensus.lastCommittedTime).Seconds() > 5 {
-		// haven't committed anything in the last 5 seconds
-		debugLevel = 10
-	} else {
-		debugLevel = 0
-	}
+func (rp *Replica) handleSporadesConsensus(message *proto.Pipelined_Sporades) {
 
 	if message.Type == 1 {
-		common.Debug("Received a propose message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a propose message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusProposeSync(message)
 
 	} else if message.Type == 2 {
-		common.Debug("Received a vote message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a vote message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusVoteSync(message)
 
 	} else if message.Type == 3 {
-		common.Debug("Received a timeout message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a timeout message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusTimeout(message)
 
 	} else if message.Type == 4 {
-		common.Debug("Received a propose-async message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a propose-async message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusProposeAsync(message)
 
 	} else if message.Type == 5 {
-		common.Debug("Received a vote-async message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a vote-async message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusAsyncVote(message)
 
 	} else if message.Type == 6 {
-		common.Debug("Received a timeout-internal message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a timeout-internal message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusInternalTimeout(message)
 	} else if message.Type == 7 {
-		common.Debug("Received a consensus-external-request message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a consensus-external-request message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusExternalRequest(message)
 	} else if message.Type == 8 {
-		common.Debug("Received a consensus-external-response message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a consensus-external-response message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusExternalResponseMessage(message)
 	} else if message.Type == 9 {
-		common.Debug("Received a async fallback-complete message from "+strconv.Itoa(int(message.Sender))+
-			" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), debugLevel, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Received a async fallback-complete message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
 		rp.handleConsensusFallbackCompleteMessage(message)
+	} else if message.Type == 10 {
+		if rp.debugOn {
+			rp.debug("Received a new view message from "+strconv.Itoa(int(message.Sender))+
+				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
+		rp.handleConsensusNewViewMessage(message)
 	}
-
 }
 
 /*
-	util function to compare the ranks; checks if v1;r1 rank higher than v2,r2
+	Util function to compare the ranks; checks if v1;r1 rank higher than v2,r2
 */
 
 func (rp *Replica) hasGreaterRank(v1 int32, r1 int32, v2 int32, r2 int32) bool {
@@ -273,10 +280,10 @@ func (rp *Replica) hasGreaterThanOrEqualRank(v1 int32, r1 int32, v2 int32, r2 in
 }
 
 /*
-	Util function to extract the highest blockHigh from the received set of vote/timeout messages
+	Util function to extract the highest blockHigh from the received set of vote/timeout/new view messages
 */
 
-func (rp *Replica) extractHighestRankedBlockHigh(messages []*proto.AsyncConsensus) *proto.AsyncConsensus_Block {
+func (rp *Replica) extractHighestRankedBlockHigh(messages []*proto.Pipelined_Sporades) *proto.Pipelined_Sporades_Block {
 	highBlock := messages[0].BlockHigh
 	for i := 0; i < len(messages); i++ {
 		if rp.hasGreaterRank(messages[i].BlockHigh.V, messages[i].BlockHigh.R, highBlock.V, highBlock.R) {
@@ -305,13 +312,13 @@ func (rp *Replica) convertToInt32Array(elements []int) []int32 {
 
 func (rp *Replica) sendExternalConsensusRequest(id string) {
 
-	randomReplica := common.Get_Some_Node(rp.replicaArrayIndex)
+	randomReplica := int32(rand.Intn(rp.numReplicas) + 1)
 
 	for randomReplica == rp.name {
-		randomReplica = common.Get_Some_Node(rp.replicaArrayIndex)
+		randomReplica = int32(rand.Intn(rp.numReplicas) + 1)
 	}
 
-	externalConsensusRequest := proto.AsyncConsensus{
+	externalConsensusRequest := proto.Pipelined_Sporades{
 		Sender:      rp.name,
 		Receiver:    randomReplica,
 		UniqueId:    id,
@@ -325,24 +332,26 @@ func (rp *Replica) sendExternalConsensusRequest(id string) {
 	}
 
 	rpcPair := common.RPCPair{
-		Code: rp.messageCodes.AsyncConsensus,
+		Code: rp.messageCodes.SporadesConsensus,
 		Obj:  &externalConsensusRequest,
 	}
 
 	rp.sendMessage(randomReplica, rpcPair)
-	common.Debug("Sent external consensus request message with type 7 to "+strconv.Itoa(int(randomReplica)), 1, rp.debugLevel, rp.debugOn)
+	if rp.debugOn {
+		rp.debug("Sent external consensus request message with type 7 to "+strconv.Itoa(int(randomReplica)), 0)
+	}
 }
 
 /*
 	Handler for external consensus request messages
 */
 
-func (rp *Replica) handleConsensusExternalRequest(message *proto.AsyncConsensus) {
+func (rp *Replica) handleConsensusExternalRequest(message *proto.Pipelined_Sporades) {
 	// if the consensus block with id message.unique_id exists in the consensus store
-	block, ok := rp.asyncConsensus.consensusPool.Get(message.UniqueId)
+	block, ok := rp.consensus.consensusPool.Get(message.UniqueId)
 	if ok {
 		// send an external consensus response 8 message to the sender
-		externalConsensusResponse := proto.AsyncConsensus{
+		externalConsensusResponse := proto.Pipelined_Sporades{
 			Sender:      rp.name,
 			Receiver:    message.Sender,
 			UniqueId:    message.UniqueId,
@@ -351,17 +360,19 @@ func (rp *Replica) handleConsensusExternalRequest(message *proto.AsyncConsensus)
 			V:           -1,
 			R:           -1,
 			BlockHigh:   nil,
-			BlockNew:    rp.makeGreatGrandParentNil(block),
+			BlockNew:    block,
 			BlockCommit: nil,
 		}
 
 		rpcPair := common.RPCPair{
-			Code: rp.messageCodes.AsyncConsensus,
+			Code: rp.messageCodes.SporadesConsensus,
 			Obj:  &externalConsensusResponse,
 		}
 
 		rp.sendMessage(message.Sender, rpcPair)
-		common.Debug("Sent external consensus response message with type 8 to "+strconv.Itoa(int(message.Sender)), 1, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			rp.debug("Sent external consensus response message with type 8 to "+strconv.Itoa(int(message.Sender)), 0)
+		}
 	}
 }
 
@@ -369,51 +380,57 @@ func (rp *Replica) handleConsensusExternalRequest(message *proto.AsyncConsensus)
 	Handler for external consensus response messages
 */
 
-func (rp *Replica) handleConsensusExternalResponseMessage(message *proto.AsyncConsensus) {
-	rp.asyncConsensus.consensusPool.Add(message.BlockNew)
-	common.Debug("Added a consensus block from an external response", 1, rp.debugLevel, rp.debugOn)
+func (rp *Replica) handleConsensusExternalResponseMessage(message *proto.Pipelined_Sporades) {
+	rp.consensus.consensusPool.Add(message.BlockNew)
+	if rp.debugOn {
+		rp.debug("Added a consensus block from an external response", 0)
+	}
 }
 
 /*
-	Set the great grand parent element to nil and return a new copy of the block
+	Make chain upto n: appends parent blocks upto n blocks in the history
 */
 
-func (rp *Replica) makeGreatGrandParentNil(blockOri *proto.AsyncConsensus_Block) *proto.AsyncConsensus_Block {
+func (rp *Replica) makeNChain(blockOri *proto.Pipelined_Sporades_Block, n int) *proto.Pipelined_Sporades_Block {
 
 	block, err := CloneMyStruct(blockOri)
+	head := block
 	if err != nil {
 		panic(err.Error())
 	}
 
-	parent := block.Parent
-	if parent != nil {
-		grandParent := parent.Parent
-		if grandParent != nil {
-			greatGrandParent := grandParent.Parent
-			if greatGrandParent != nil {
-				block.Parent.Parent.Parent = nil
-				return block
-			} else {
-				return block
-			}
-		} else {
-			return block
+	for n >= 0 {
+		n--
+		parent_id := block.ParentId
+		if parent_id == "genesis-block" {
+			return head
 		}
-	} else {
-		return block
+		b, ok := rp.consensus.consensusPool.Get(parent_id)
+		if !ok {
+			panic("parent with hash " + parent_id + " not found for block " + block.Id)
+		}
+		b, err = CloneMyStruct(b)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		block.Parent = b
+		block = block.Parent
 	}
+	return head
+
 }
 
 /*
 	Deep copy a consensus block
 */
 
-func CloneMyStruct(orig *proto.AsyncConsensus_Block) (*proto.AsyncConsensus_Block, error) {
+func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Sporades_Block, error) {
 	origJSON, err := json.Marshal(orig)
 	if err != nil {
 		panic(err)
 	}
-	clone := proto.AsyncConsensus_Block{}
+	clone := proto.Pipelined_Sporades_Block{}
 	if err = json.Unmarshal(origJSON, &clone); err != nil {
 		return nil, err
 	}
@@ -431,65 +448,42 @@ func (rp *Replica) printLogConsensus() {
 	}
 	defer f.Close()
 
-	head := rp.asyncConsensus.blockCommit // the last block to commit
+	head := rp.consensus.lastCommittedBlock // the last block to commit
 	if head == nil {
 		return
 	}
-	genesisBlock, ok := rp.asyncConsensus.consensusPool.Get("genesis-block")
+	genesisBlock, ok := rp.consensus.consensusPool.Get("genesis-block")
 	if !ok {
 		panic("Genesis Block not found when printing the logs")
 	}
-	//toCommit = [] contains all the entries from the genesisBlock (not including) to rp.blockCommit (included)
-	toCommit := make([]*proto.AsyncConsensus_Block, 0)
+
+	toPrint := make([]*proto.Pipelined_Sporades_Block, 0)
 
 	for head.Id != genesisBlock.Id {
-		//	toCommit.append(head)
-		toCommit = append([]*proto.AsyncConsensus_Block{head}, toCommit...)
-		//	head = head.parent
-		head = head.Parent
 
-		//	if head is in the consensus pool
-		headBlock, ok := rp.asyncConsensus.consensusPool.Get(head.Id)
-		if ok {
-			head = headBlock
-		} else {
-			panic("Consensus block " + head.Id + " not found in the pool")
+		toPrint = append([]*proto.Pipelined_Sporades_Block{head}, toPrint...)
+
+		parent_id := head.ParentId
+		if parent_id == "genesis-block" {
+			break
 		}
 
+		parent, ok := rp.consensus.consensusPool.Get(parent_id)
+		if !ok {
+			panic("parent not found")
+		}
+		head = parent
+
 	}
 
-	lastCommittedMemPoolIndexes := make([]int, rp.numReplicas)
-	for i := 0; i < rp.numReplicas; i++ {
-		lastCommittedMemPoolIndexes[i] = 0
-	}
-
-	for i := 0; i < len(toCommit); i++ {
-		nextBlockToCommit := toCommit[i] // toCommit[i] is the next block to be committed
-		nextMemBlockLogPositionsToCommit := nextBlockToCommit.Commands
-
-		// for each log position in nextMemBlockLogPositionsToCommit that corresponds to different replicas, check if the index is --
-		// greater than the lastCommittedMemPoolIndexes
-		for j := 0; j < rp.numReplicas; j++ {
-			if int(nextMemBlockLogPositionsToCommit[j]) > lastCommittedMemPoolIndexes[j] {
-				// there are new entries to commit for this index
-				startMemPoolCounter := lastCommittedMemPoolIndexes[j] + 1
-				lastMemPoolCounter := int(nextMemBlockLogPositionsToCommit[j])
-
-				for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
-					memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
-					memBlock, _ := rp.memPool.blockMap.Get(memPoolName)
-					for clientBatchIndex := 0; clientBatchIndex < len(memBlock.ClientBatches); clientBatchIndex++ {
-						clientBatch := memBlock.ClientBatches[clientBatchIndex]
-						clientBatchID := clientBatch.UniqueId
-						clientBatchCommands := clientBatch.Requests
-						for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
-							clientRequestID := clientBatchCommands[clientRequestIndex].Command
-							_, _ = f.WriteString(nextBlockToCommit.Id + "-" + memPoolName + "-" + clientBatchID + "-" + strconv.Itoa(clientRequestIndex) + ":" + clientRequestID + "\n")
-						}
-					}
-
-				}
-				lastCommittedMemPoolIndexes[j] = lastMemPoolCounter
+	for i := 0; i < len(toPrint); i++ {
+		for clientBatchIndex := 0; clientBatchIndex < len(toPrint[i].Commands.Requests); clientBatchIndex++ {
+			clientBatch := toPrint[i].Commands.Requests[clientBatchIndex]
+			clientBatchID := clientBatch.UniqueId
+			clientBatchCommands := clientBatch.Requests
+			for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
+				clientRequest := clientBatchCommands[clientRequestIndex].Command
+				_, _ = f.WriteString(toPrint[i].Id + "-" + clientBatchID + "-" + strconv.Itoa(clientRequestIndex) + ":" + clientRequest + "\n")
 			}
 		}
 	}

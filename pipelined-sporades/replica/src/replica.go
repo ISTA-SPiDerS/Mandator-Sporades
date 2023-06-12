@@ -62,8 +62,6 @@ type Replica struct {
 	incomingRequests []*proto.ClientBatch
 	pipelineLength   int
 
-	lastProposedTime time.Time
-
 	finished bool // to finish consensus
 }
 
@@ -114,7 +112,6 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		state:            Init(benchmarkMode, name, keyLen, valLen),
 		incomingRequests: make([]*proto.ClientBatch, 0),
 		pipelineLength:   pipelineLength,
-		lastProposedTime: time.Now(),
 		finished:         false,
 	}
 
