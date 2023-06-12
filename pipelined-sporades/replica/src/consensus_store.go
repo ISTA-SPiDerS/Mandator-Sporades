@@ -1,9 +1,8 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
+	"pipelined-sporades/proto"
 )
 
 /*
@@ -15,7 +14,7 @@ import (
 */
 
 type AsynConsensusBlock struct {
-	ConsensusBlock *proto.AsyncConsensus_Block
+	ConsensusBlock *proto.Pipelined_Sporades_Block
 	acks           []int32 // contains the set of nodes who acknowledged the consensus block, a simple counter might work, but having an array is extensible
 }
 
@@ -30,6 +29,18 @@ type AsyncConsensusStore struct {
 }
 
 /*
+	print debug messages
+*/
+
+func (ms *AsyncConsensusStore) debug(message string, level int) {
+	if ms.debugOn {
+		if ms.debugLevel <= level {
+			fmt.Print(message)
+		}
+	}
+}
+
+/*
 	allocate the map object
 */
 
@@ -37,15 +48,17 @@ func (ms *AsyncConsensusStore) Init(debugLevel int, debugOn bool) {
 	ms.ConsensusBlocks = make(map[string]AsynConsensusBlock)
 	ms.debugLevel = debugLevel
 	ms.debugOn = debugOn
-	common.Debug("Initialized a new consensus message store", 0, ms.debugLevel, ms.debugOn)
+	if ms.debugOn {
+		ms.debug("Initialized a new consensus message store", 0)
+	}
 }
 
 /*
 	Add a new consensus block to the store if it is not already there
 */
 
-func (ms *AsyncConsensusStore) Add(block *proto.AsyncConsensus_Block) {
-	if block.R > 2 && block.Parent == nil {
+func (ms *AsyncConsensusStore) Add(block *proto.Pipelined_Sporades_Block) {
+	if block.R > 2 && block.ParentId == "" {
 		panic("Error Nil parent found in " + fmt.Sprintf("%v", block))
 	}
 	_, ok := ms.ConsensusBlocks[block.Id]
@@ -54,7 +67,9 @@ func (ms *AsyncConsensusStore) Add(block *proto.AsyncConsensus_Block) {
 			ConsensusBlock: block,
 			acks:           make([]int32, 0),
 		}
-		common.Debug("Added a new consensus block to consensus store with  "+fmt.Sprintf("%v", block.Id), 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			ms.debug("Added a new consensus block to consensus store with  "+fmt.Sprintf("%v", block.Id), 0)
+		}
 	}
 }
 
@@ -62,14 +77,18 @@ func (ms *AsyncConsensusStore) Add(block *proto.AsyncConsensus_Block) {
 	return an existing consensus block
 */
 
-func (ms *AsyncConsensusStore) Get(id string) (*proto.AsyncConsensus_Block, bool) {
+func (ms *AsyncConsensusStore) Get(id string) (*proto.Pipelined_Sporades_Block, bool) {
 	block, ok := ms.ConsensusBlocks[id]
 	if !ok {
-		common.Debug("Requested consensus block does not exist, hence returning nil for id "+id, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			ms.debug("Requested consensus block does not exist, hence returning nil for id "+id, 0)
+		}
 		return nil, ok
 	} else {
-		common.Debug("Requested consensus block exists, hence returning the block for id "+id, 0, ms.debugLevel, ms.debugOn)
-		if block.ConsensusBlock.R > 2 && block.ConsensusBlock.Parent == nil {
+		if ms.debugOn {
+			ms.debug("Requested consensus block exists, hence returning the block for id "+id, 0)
+		}
+		if block.ConsensusBlock.R > 2 && block.ConsensusBlock.ParentId == "" {
 			panic("Error Nil parent found in " + fmt.Sprintf("%v", block.ConsensusBlock))
 		}
 		return block.ConsensusBlock, ok
@@ -83,10 +102,14 @@ func (ms *AsyncConsensusStore) Get(id string) (*proto.AsyncConsensus_Block, bool
 func (ms *AsyncConsensusStore) GetAcks(id string) []int32 {
 	block, ok := ms.ConsensusBlocks[id]
 	if ok {
-		common.Debug("Requested mem block exists, hence returning the acks for id "+id, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			ms.debug("Requested block exists, hence returning the acks for id "+id, 0)
+		}
 		return block.acks
 	}
-	common.Debug("Requested mem block does not exist, hence returning nil acks for id "+id, 0, ms.debugLevel, ms.debugOn)
+	if ms.debugOn {
+		ms.debug("Requested consensus block does not exist, hence returning nil acks for id "+id, 0)
+	}
 	return nil
 }
 
@@ -96,7 +119,9 @@ func (ms *AsyncConsensusStore) GetAcks(id string) []int32 {
 
 func (ms *AsyncConsensusStore) Remove(id string) {
 	delete(ms.ConsensusBlocks, id)
-	common.Debug("Removed a consensus block with id "+id, 0, ms.debugLevel, ms.debugOn)
+	if ms.debugOn {
+		ms.debug("Removed a consensus block with id "+id, 0)
+	}
 }
 
 /*
@@ -114,7 +139,12 @@ func (ms *AsyncConsensusStore) AddAck(id string, node int32) {
 			ConsensusBlock: tempBlock,
 			acks:           tempAcks,
 		}
-		common.Debug("Added an ack for consensus block with id "+id, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			ms.debug("Added an ack for consensus block with id "+id, 0)
+		}
+	} else {
+		if ms.debugOn {
+			ms.debug("Adding an ack failed for consensus block with id "+id+" because the consensus block does not exist", 0)
+		}
 	}
-	common.Debug("Adding an ack failed for consensus block with id "+id+" because the consensus block does not exist", 0, ms.debugLevel, ms.debugOn)
 }
