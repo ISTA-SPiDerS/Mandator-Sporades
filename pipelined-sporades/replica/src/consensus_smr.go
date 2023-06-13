@@ -14,6 +14,7 @@ func (rp *Replica) handleClientBatch(batch *proto.ClientBatch) {
 	if rp.debugOn {
 		rp.debug("put incoming client batch to buffer: "+fmt.Sprintf("%v", batch), 0)
 	}
+	rp.propose(false)
 }
 
 /*

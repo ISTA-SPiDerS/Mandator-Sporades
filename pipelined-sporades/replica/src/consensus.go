@@ -26,6 +26,7 @@ type SporadesConsensus struct {
 	bFall           map[string][]string                    // for storing the fallback block ids: the key is view.level, value is the array of fallback block ids
 	consensusPool   *AsyncConsensusStore                   // an id of a consensus block is creator_name.v.r.type.level. type can be r (regular) or f (fallback), level can be 1,2 or -1 (for regular blocks)
 	voteReplies     map[string][]*proto.Pipelined_Sporades // stores the vote messages received in the sync path. The key is v.r, the value is the array of received votes
+	newViewMessages map[int32][]*proto.Pipelined_Sporades  // stores the new view messages received for each view. The key is v, the value is the array of received new view messages
 	timeoutMessages map[int32][]*proto.Pipelined_Sporades  // stores the timeout messages for each view, the key is the view number, value is the array of received timeout messages
 	viewTimer       *common.TimerWithCancel                // a timer to set the view timeouts in the acceptors
 
@@ -66,6 +67,7 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *Sporades
 		bFall:           make(map[string][]string),
 		consensusPool:   &AsyncConsensusStore{},
 		voteReplies:     make(map[string][]*proto.Pipelined_Sporades),
+		newViewMessages: make(map[int32][]*proto.Pipelined_Sporades),
 		timeoutMessages: make(map[int32][]*proto.Pipelined_Sporades),
 
 		lastCommittedBlock: blockHigh,
