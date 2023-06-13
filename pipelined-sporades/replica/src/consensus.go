@@ -37,6 +37,8 @@ type SporadesConsensus struct {
 	startTime         time.Time      // time when the consensus was started
 	lastCommittedTime time.Time      // time when the last consensus block was committed
 	lastProposedTime  time.Time
+
+	orderedMessages [][]*proto.Pipelined_Sporades // pending Sporades  messages to be processed from each replica
 }
 
 /*
@@ -70,6 +72,7 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *Sporades
 		randomness:         make([]int, 0),
 		sentLevel2Block:    make(map[int32]bool),
 		startTime:          time.Now(),
+		orderedMessages:    make([][]*proto.Pipelined_Sporades, numReplicas),
 	}
 
 	// initialize the consensus pool
@@ -83,6 +86,12 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *Sporades
 	for i := 0; i < 1000000; i++ {
 		asyncConsensus.randomness = append(asyncConsensus.randomness, (r2.Intn(42))%numReplicas+1)
 		asyncConsensus.sentLevel2Block[int32(i)] = false
+	}
+
+	// initialize ordered Messages
+
+	for i := 0; i < numReplicas; i++ {
+		asyncConsensus.orderedMessages[i] = make([]*proto.Pipelined_Sporades, 0)
 	}
 
 	return &asyncConsensus
@@ -178,73 +187,99 @@ func (rp *Replica) setViewTimer() {
 	Handler for the sporades consensus messages
 */
 
-func (rp *Replica) handleSporadesConsensus(message *proto.Pipelined_Sporades) {
+func (rp *Replica) handleSporadesConsensus(messageNew *proto.Pipelined_Sporades) {
 
-	if message.Type == 1 {
+	if messageNew.Type == 7 {
 		if rp.debugOn {
-			rp.debug("Received a propose message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+			rp.debug("Received a consensus-external-request message from "+strconv.Itoa(int(messageNew.Sender))+
+				" for view "+strconv.Itoa(int(messageNew.V))+" for round "+strconv.Itoa(int(messageNew.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
 		}
-		rp.handleConsensusProposeSync(message)
+		rp.handleConsensusExternalRequest(messageNew)
+		return
+	} else if messageNew.Type == 8 {
+		if rp.debugOn {
+			rp.debug("Received a consensus-external-response message from "+strconv.Itoa(int(messageNew.Sender))+
+				" for view "+strconv.Itoa(int(messageNew.V))+" for round "+strconv.Itoa(int(messageNew.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+		}
+		rp.handleConsensusExternalResponseMessage(messageNew)
+		return
+	} else {
 
-	} else if message.Type == 2 {
-		if rp.debugOn {
-			rp.debug("Received a vote message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusVoteSync(message)
+		// add this message to the tail of the receive buffer of the sender
 
-	} else if message.Type == 3 {
-		if rp.debugOn {
-			rp.debug("Received a timeout message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusTimeout(message)
+		rp.consensus.orderedMessages[messageNew.Sender-1] = append(rp.consensus.orderedMessages[messageNew.Sender-1], messageNew)
 
-	} else if message.Type == 4 {
-		if rp.debugOn {
-			rp.debug("Received a propose-async message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusProposeAsync(message)
+		output := true
 
-	} else if message.Type == 5 {
-		if rp.debugOn {
-			rp.debug("Received a vote-async message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusAsyncVote(message)
+		for output && len(rp.consensus.orderedMessages[messageNew.Sender-1]) > 0 {
 
-	} else if message.Type == 6 {
-		if rp.debugOn {
-			rp.debug("Received a timeout-internal message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+			message := rp.consensus.orderedMessages[messageNew.Sender-1][0]
+
+			if message.Type == 1 {
+				if rp.debugOn {
+					rp.debug("Received a propose message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusProposeSync(message)
+
+			} else if message.Type == 2 {
+				if rp.debugOn {
+					rp.debug("Received a vote message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusVoteSync(message)
+
+			} else if message.Type == 3 {
+				if rp.debugOn {
+					rp.debug("Received a timeout message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusTimeout(message)
+
+			} else if message.Type == 4 {
+				if rp.debugOn {
+					rp.debug("Received a propose-async message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusProposeAsync(message)
+
+			} else if message.Type == 5 {
+				if rp.debugOn {
+					rp.debug("Received a vote-async message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusAsyncVote(message)
+
+			} else if message.Type == 6 {
+				if rp.debugOn {
+					rp.debug("Received a timeout-internal message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusInternalTimeout(message)
+			} else if message.Type == 9 {
+				if rp.debugOn {
+					rp.debug("Received a async fallback-complete message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusFallbackCompleteMessage(message)
+			} else if message.Type == 10 {
+				if rp.debugOn {
+					rp.debug("Received a new view message from "+strconv.Itoa(int(message.Sender))+
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				}
+				output = rp.handleConsensusNewViewMessage(message)
+			}
+
+			if output {
+				// the message was processed correctly
+				rp.consensus.orderedMessages[messageNew.Sender-1][0] = nil
+				if len(rp.consensus.orderedMessages[messageNew.Sender-1]) > 1 {
+					rp.consensus.orderedMessages[messageNew.Sender-1] = rp.consensus.orderedMessages[messageNew.Sender-1][1:]
+				} else {
+					rp.consensus.orderedMessages[messageNew.Sender-1] = make([]*proto.Pipelined_Sporades, 0)
+				}
+			}
 		}
-		rp.handleConsensusInternalTimeout(message)
-	} else if message.Type == 7 {
-		if rp.debugOn {
-			rp.debug("Received a consensus-external-request message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusExternalRequest(message)
-	} else if message.Type == 8 {
-		if rp.debugOn {
-			rp.debug("Received a consensus-external-response message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusExternalResponseMessage(message)
-	} else if message.Type == 9 {
-		if rp.debugOn {
-			rp.debug("Received a async fallback-complete message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusFallbackCompleteMessage(message)
-	} else if message.Type == 10 {
-		if rp.debugOn {
-			rp.debug("Received a new view message from "+strconv.Itoa(int(message.Sender))+
-				" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
-		}
-		rp.handleConsensusNewViewMessage(message)
 	}
 }
 
