@@ -197,15 +197,6 @@ func (rp *Replica) propose(sendHistory bool) {
 		return // we are in the async path
 	}
 
-	var batches []*proto.ClientBatch
-	if len(rp.incomingRequests) <= rp.replicaBatchSize {
-		batches = rp.incomingRequests
-		rp.incomingRequests = make([]*proto.ClientBatch, 0)
-	} else {
-		batches = rp.incomingRequests[:rp.replicaBatchSize]
-		rp.incomingRequests = rp.incomingRequests[rp.replicaBatchSize:]
-	}
-
 	if rp.name != rp.getLeader(rp.consensus.vCurr) {
 		return // i am not the leader
 	}
@@ -221,6 +212,15 @@ func (rp *Replica) propose(sendHistory bool) {
 
 		if rp.debugOn {
 			rp.debug("proposing a new batch in the sync path", 0)
+		}
+
+		var batches []*proto.ClientBatch
+		if len(rp.incomingRequests) <= rp.replicaBatchSize {
+			batches = rp.incomingRequests
+			rp.incomingRequests = make([]*proto.ClientBatch, 0)
+		} else {
+			batches = rp.incomingRequests[:rp.replicaBatchSize]
+			rp.incomingRequests = rp.incomingRequests[rp.replicaBatchSize:]
 		}
 
 		commands := proto.ReplicaBatch{

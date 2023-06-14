@@ -82,8 +82,37 @@ func (rp *Replica) updateSMR() {
 		rp.consensus.consensusPool.Add(nextBlockToCommit)
 		rp.consensus.lastCommittedTime = time.Now()
 		rp.sendClientResponses(responses)
+		rp.removeDecidedItemsFromFutureProposals(clientBatches)
 	}
 
+}
+
+// remove the items in array from incomingRequests
+
+func (rp *Replica) removeDecidedItemsFromFutureProposals(batches []*proto.ClientBatch) {
+	array := make([]string, 0)
+
+	for i := 0; i < len(batches); i++ {
+		array = append(array, batches[i].UniqueId)
+	}
+
+	// Create a set to store the elements of array
+	set := make(map[string]bool)
+	for _, elem := range array {
+		set[elem] = true
+	}
+
+	// Remove elements from pr.incomingRequests if they exist in the set
+	j := 0
+	for i := 0; i < len(rp.incomingRequests); i++ {
+		if !set[rp.incomingRequests[i].UniqueId] {
+			rp.incomingRequests[j] = rp.incomingRequests[i]
+			j++
+		}
+	}
+
+	// Truncate pr.toBeProposed to remove the remaining elements
+	rp.incomingRequests = rp.incomingRequests[:j]
 }
 
 /*
