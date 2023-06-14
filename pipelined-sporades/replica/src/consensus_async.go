@@ -28,6 +28,7 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 			if len(timeouts) == rp.numReplicas/2+1 {
 				//	set is Async to true
 				rp.consensus.isAsync = true
+				rp.consensus.pipelinedSoFar = 0
 				if rp.debugOn {
 					rp.debug("Entering view change in view "+strconv.Itoa(int(rp.consensus.vCurr)), 0)
 				}

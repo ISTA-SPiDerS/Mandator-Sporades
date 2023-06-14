@@ -79,6 +79,7 @@ func (rp *Replica) updateSMR() {
 			rp.debug("Committed consensus block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime)), 0)
 		}
 		rp.consensus.lastCommittedBlock = nextBlockToCommit
+		rp.consensus.pipelinedSoFar--
 		rp.consensus.consensusPool.Add(nextBlockToCommit)
 		rp.sendClientResponses(responses)
 		rp.removeDecidedItemsFromFutureProposals(clientBatches)

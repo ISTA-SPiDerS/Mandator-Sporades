@@ -11,7 +11,7 @@ import (
 // handler for new view messages
 
 func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporades) bool {
-	if rp.hasGreaterThanOrEqualRank(message.V, message.R, rp.consensus.vCurr, rp.consensus.rCurr) {
+	if message.V >= rp.consensus.vCurr {
 		if !rp.consensus.isAsync {
 			_, ok := rp.consensus.newViewMessages[message.V]
 			if !ok {
@@ -41,8 +41,9 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 					}
 				}
 				if rp.debugOn {
-					rp.debug("invoked propose after becoming the leader in view "+fmt.Sprintf("%v", message.V), 0)
+					rp.debug("invoking propose after becoming the leader in view "+fmt.Sprintf("%v", message.V), 0)
 				}
+				rp.consensus.pipelinedSoFar = 0
 				rp.propose(true)
 			}
 			return true
@@ -94,6 +95,12 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 			if rp.debugOn {
 				rp.debug("Sending sync vote to "+strconv.Itoa(int(nextLeader)), 0)
 			}
+
+			vote_block_high, err := CloneMyStruct(rp.consensus.blockHigh)
+			if err != nil {
+				panic(err.Error())
+			}
+			vote_block_high.Commands = nil
 			voteMsg := proto.Pipelined_Sporades{
 				Sender:      rp.name,
 				Receiver:    nextLeader,
@@ -102,7 +109,7 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 				Note:        "",
 				V:           rp.consensus.vCurr,
 				R:           rp.consensus.rCurr,
-				BlockHigh:   rp.consensus.blockHigh,
+				BlockHigh:   vote_block_high,
 				BlockNew:    nil,
 				BlockCommit: nil,
 			}
@@ -120,10 +127,17 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 			rp.setViewTimer()
 			return true
 		} else {
-			if rp.debugOn {
-				rp.debug("cannot process the propose message "+fmt.Sprintf("%v", message)+" because I still haven't changed my mode to sync ", 0)
+			if message.V > rp.consensus.vCurr {
+				if rp.debugOn {
+					rp.debug("cannot process the propose message "+fmt.Sprintf("%v", message)+" because I still haven't changed my mode to sync ", 0)
+				}
+				return false
+			} else {
+				if rp.debugOn {
+					rp.debug("dismissed old propose sync message "+fmt.Sprintf("%v", message), 0)
+				}
+				return true // discard this message
 			}
-			return false
 		}
 	} else {
 		if rp.debugOn {
@@ -201,12 +215,14 @@ func (rp *Replica) propose(sendHistory bool) {
 		return // i am not the leader
 	}
 
-	if rp.consensus.rCurr-rp.consensus.blockCommit.R > int32(rp.pipelineLength) {
+	if rp.consensus.pipelinedSoFar > rp.pipelineLength {
 		if rp.debugOn {
 			rp.debug("did not propose because pipeline length full", 0)
 		}
 		return
 	}
+
+	rp.consensus.pipelinedSoFar++
 
 	if len(rp.incomingRequests) >= rp.replicaBatchSize || (time.Now().Sub(rp.consensus.lastProposedTime).Microseconds() > int64(rp.replicaBatchTime)) {
 
@@ -292,6 +308,8 @@ func (rp *Replica) propose(sendHistory bool) {
 			rp.debug("broadcast propose type 1 ", 0)
 		}
 
+		rp.consensus.lastProposedTime = time.Now()
+
 		// update rank
 
 		rp.consensus.vCurr = newBlock.V
@@ -303,6 +321,13 @@ func (rp *Replica) propose(sendHistory bool) {
 		if rp.debugOn {
 			rp.debug("Sending sync vote to self", 0)
 		}
+
+		vote_block_high, err := CloneMyStruct(rp.consensus.blockHigh)
+		if err != nil {
+			panic(err)
+		}
+		vote_block_high.Parent = nil
+
 		voteMsg := proto.Pipelined_Sporades{
 			Sender:      rp.name,
 			Receiver:    rp.name,
@@ -311,7 +336,7 @@ func (rp *Replica) propose(sendHistory bool) {
 			Note:        "",
 			V:           rp.consensus.vCurr,
 			R:           rp.consensus.rCurr,
-			BlockHigh:   rp.consensus.blockHigh,
+			BlockHigh:   vote_block_high,
 			BlockNew:    nil,
 			BlockCommit: nil,
 		}
@@ -364,6 +389,10 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.Pipelined_Sporades) bo
 				}
 
 				rp.consensus.blockCommit = newBlockCommit
+				if rp.debugOn {
+					rp.debug("sync leader updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 0)
+				}
+				rp.updateSMR()
 			}
 			return true
 		} else {

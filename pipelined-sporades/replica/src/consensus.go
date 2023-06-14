@@ -39,6 +39,8 @@ type SporadesConsensus struct {
 	lastProposedTime time.Time      //time when last proposed
 
 	orderedMessages [][]*proto.Pipelined_Sporades // pending Sporades  messages to be processed from each replica
+
+	pipelinedSoFar int
 }
 
 /*
@@ -74,6 +76,7 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *Sporades
 		sentLevel2Block:    make(map[int32]bool),
 		startTime:          time.Now(),
 		orderedMessages:    make([][]*proto.Pipelined_Sporades, numReplicas),
+		pipelinedSoFar:     0,
 	}
 
 	// initialize the consensus pool
