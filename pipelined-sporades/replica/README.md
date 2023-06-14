@@ -1,1 +1,1 @@
-Replica directory implements Sporades algorithm with pipelining
+This directory implements Sporades algorithm with pipelining
