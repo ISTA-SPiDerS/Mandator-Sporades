@@ -58,9 +58,6 @@ func (ms *AsyncConsensusStore) Init(debugLevel int, debugOn bool) {
 */
 
 func (ms *AsyncConsensusStore) Add(block *proto.Pipelined_Sporades_Block) {
-	if block.R > 2 && block.ParentId == "" {
-		panic("Error Nil parent found in " + fmt.Sprintf("%v", block))
-	}
 
 	if block.Parent != nil {
 		ms.Add(block.Parent)
@@ -93,9 +90,6 @@ func (ms *AsyncConsensusStore) Get(id string) (*proto.Pipelined_Sporades_Block, 
 	} else {
 		if ms.debugOn {
 			ms.debug("Requested consensus block exists, hence returning the block for id "+id, 0)
-		}
-		if block.ConsensusBlock.R > 2 && block.ConsensusBlock.ParentId == "" {
-			panic("Error Nil parent found in " + fmt.Sprintf("%v", block.ConsensusBlock))
 		}
 		return block.ConsensusBlock, ok
 	}

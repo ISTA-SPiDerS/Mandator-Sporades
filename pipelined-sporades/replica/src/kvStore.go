@@ -73,7 +73,7 @@ func (b *Benchmark) Execute(requests []*proto.ClientBatch) []*proto.ClientBatch 
 	var commands []*proto.ClientBatch
 	if b.mode == 0 {
 		commands = b.residentExecute(requests)
-	} else {
+	} else if b.mode == 1 {
 		commands = b.redisExecute(requests)
 	}
 	return commands
@@ -120,7 +120,7 @@ func (b *Benchmark) residentExecute(commands []*proto.ClientBatch) []*proto.Clie
 }
 
 /*
-	redis commands execution: batch the requests and execute
+	redis commands execution: execute a batch of client batches
 */
 
 func (b *Benchmark) redisExecute(commands []*proto.ClientBatch) []*proto.ClientBatch {
