@@ -36,10 +36,8 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 				tempBlockHigh := rp.extractHighestRankedBlockHigh(timeouts)
 				if rp.hasGreaterRank(tempBlockHigh.V, tempBlockHigh.R, rp.consensus.blockHigh.V, rp.consensus.blockHigh.R) {
 					rp.consensus.blockHigh = tempBlockHigh
-				}
-				//	set vCur, rCur to v, max(r cur , block high .r)
-				rp.consensus.vCurr = message.V
-				if rp.consensus.blockHigh.R > rp.consensus.rCurr {
+					//	set vCur, rCur to v, max(r cur , block high .r)
+					rp.consensus.vCurr = rp.consensus.blockHigh.V
 					rp.consensus.rCurr = rp.consensus.blockHigh.R
 				}
 
@@ -157,7 +155,7 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 
 				rp.sendMessage(message.Sender, rpcPair)
 				if rp.debugOn {
-					rp.debug("Sent vote-async 5 to "+strconv.Itoa(int(message.Sender)), 2)
+					rp.debug("Sent vote-async 5 to "+strconv.Itoa(int(message.Sender)), 0)
 				}
 				// if h == 2 set B fall [p] to B, and adapt level 1 block unless I have already sent level 2 block
 				if message.BlockNew.Level == 2 {
@@ -305,6 +303,7 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 					Id:       strconv.Itoa(int(rp.name)) + "." + strconv.Itoa(int(rp.consensus.vCurr)) + "." + strconv.Itoa(int(rLevel1+1)) + "." + "f" + "." + strconv.Itoa(int(2)), //creator_name.v.r.type.level. type can be r (regular) or f (fallback), level can be 1,2 or -1 (for regular blocks)
 					V:        rp.consensus.vCurr,
 					R:        rLevel1 + 1,
+					Parent:   l1block,
 					ParentId: l1block.Id,
 					Commands: &commands,
 					Level:    2,
@@ -372,6 +371,9 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 		}
 		return true
 	} else {
+		if rp.debugOn {
+			rp.debug("rejected a vote sync because i have moved on", 0)
+		}
 		return true // this message is obsolete
 	}
 }
@@ -406,7 +408,6 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 				// if height 2 block by leader exists in the first n-f height 2 blocks received in the fallback messages
 				height2ConfirmedLeaderBlockExists := false
 				var height2ConfirmedLeaderBlock *proto.Pipelined_Sporades_Block
-				height2ConfirmedLeaderBlock = nil
 				for j := 0; j < len(rp.consensus.bFall[key]); j++ {
 					creator := strings.Split(rp.consensus.bFall[key][j], ".")[0]
 					if creator == strconv.Itoa(leaderNode) {
@@ -440,7 +441,6 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 					if ok {
 						height2LeaderBlockExists := false
 						var height2LeaderBlock *proto.Pipelined_Sporades_Block
-						height2LeaderBlock = nil
 						for k := 0; k < len(height2Blocks); k++ {
 							creator := strings.Split(height2Blocks[k], ".")[0]
 							if creator == strconv.Itoa(leaderNode) {
@@ -460,7 +460,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 							}
 						} else {
 							if rp.debugOn {
-								rp.debug("Leader node level 2 proposal does not exists for the view "+strconv.Itoa(int(rp.consensus.vCurr)), 0)
+								rp.debug("Leader node level 2 async proposal does not exists for the view "+strconv.Itoa(int(rp.consensus.vCurr)), 0)
 							}
 						}
 					}
@@ -484,7 +484,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 					Note:        "",
 					V:           rp.consensus.vCurr,
 					R:           rp.consensus.rCurr,
-					BlockHigh:   rp.consensus.blockHigh,
+					BlockHigh:   rp.makeNChain(rp.consensus.blockHigh, int(rp.consensus.blockHigh.R-rp.consensus.blockCommit.R)),
 					BlockNew:    nil,
 					BlockCommit: nil,
 				}
@@ -496,7 +496,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 
 				rp.sendMessage(nextLeader, rpcPair)
 				if rp.debugOn {
-					rp.debug("Exiting view change and sending vote to "+strconv.Itoa(int(nextLeader))+" after the view change", 0)
+					rp.debug("Exiting view change and sending new view to "+strconv.Itoa(int(nextLeader))+" after the view change", 0)
 				}
 				// start the timeout
 				rp.setViewTimer()
