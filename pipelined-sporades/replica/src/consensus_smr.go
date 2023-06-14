@@ -80,7 +80,6 @@ func (rp *Replica) updateSMR() {
 		}
 		rp.consensus.lastCommittedBlock = nextBlockToCommit
 		rp.consensus.consensusPool.Add(nextBlockToCommit)
-		rp.consensus.lastCommittedTime = time.Now()
 		rp.sendClientResponses(responses)
 		rp.removeDecidedItemsFromFutureProposals(clientBatches)
 	}

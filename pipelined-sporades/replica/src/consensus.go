@@ -28,16 +28,15 @@ type SporadesConsensus struct {
 	voteReplies     map[string][]*proto.Pipelined_Sporades // stores the vote messages received in the sync path. The key is v.r, the value is the array of received votes
 	newViewMessages map[int32][]*proto.Pipelined_Sporades  // stores the new view messages received for each view. The key is v, the value is the array of received new view messages
 	timeoutMessages map[int32][]*proto.Pipelined_Sporades  // stores the timeout messages for each view, the key is the view number, value is the array of received timeout messages
-	viewTimer       *common.TimerWithCancel                // a timer to set the view timeouts in the acceptors
+	viewTimer       *common.TimerWithCancel                // a timer to set the view timeouts in the replicas
 
 	lastCommittedBlock *proto.Pipelined_Sporades_Block // the last committed block
 
 	randomness []int // predefined random leader node names for each view
 
-	sentLevel2Block   map[int32]bool // records if level 2 fallback block was sent for view v; key is v
-	startTime         time.Time      // time when the consensus was started
-	lastCommittedTime time.Time      // time when the last consensus block was committed
-	lastProposedTime  time.Time
+	sentLevel2Block  map[int32]bool // records if level 2 fallback block was sent for view v; key is v
+	startTime        time.Time      // time when the consensus was started
+	lastProposedTime time.Time      //time when last proposed
 
 	orderedMessages [][]*proto.Pipelined_Sporades // pending Sporades  messages to be processed from each replica
 }
@@ -100,7 +99,7 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *Sporades
 }
 
 /*
-	Returns the leader for the view; view leaders are pre-defined
+	Returns the sync leader for the view; view leaders are pre-defined
 */
 
 func (rp *Replica) getLeader(view int32) int32 {
@@ -114,7 +113,6 @@ func (rp *Replica) getLeader(view int32) int32 {
 
 func (rp *Replica) sendGenesisConsensusNewView() {
 	rp.consensus.startTime = time.Now()
-	rp.consensus.lastCommittedTime = time.Now()
 
 	//send <new-view, vcur , rcur , blockhigh > to leader
 	nextLeader := rp.getLeader(rp.consensus.vCurr)
@@ -207,7 +205,7 @@ func (rp *Replica) handleSporadesConsensus(messageNew *proto.Pipelined_Sporades)
 		return
 	} else {
 
-		// add this message to the tail of the receive buffer of the sender
+		// add this message to the tail of the orderedMessages buffer of the sender
 
 		rp.consensus.orderedMessages[messageNew.Sender-1] = append(rp.consensus.orderedMessages[messageNew.Sender-1], messageNew)
 
@@ -444,7 +442,7 @@ func (rp *Replica) makeNChain(blockOri *proto.Pipelined_Sporades_Block, n int) *
 		}
 		b, ok := rp.consensus.consensusPool.Get(parent_id)
 		if !ok {
-			panic("parent with hash " + parent_id + " not found for block " + block.Id)
+			return head
 		}
 		b, err = CloneMyStruct(b)
 		if err != nil {
