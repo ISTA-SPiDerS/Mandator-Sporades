@@ -393,6 +393,7 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.Pipelined_Sporades) bo
 					rp.debug("sync leader updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 0)
 				}
 				rp.updateSMR()
+				rp.propose(false)
 			}
 			return true
 		} else {

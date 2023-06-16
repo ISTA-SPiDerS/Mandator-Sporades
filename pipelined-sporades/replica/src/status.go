@@ -42,6 +42,27 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 			if rp.debugOn {
 				rp.debug("started Sporades consensus", 0)
 			}
+
+			time.Sleep(time.Duration(2) * time.Second)
+
+			// a dummy client request generator to avoid view timeouts due to absense of client requests
+			go func() {
+				for true {
+					time.Sleep(time.Duration(rp.viewTimeout/3) * time.Microsecond)
+					dummyClientBatch := proto.ClientBatch{
+						UniqueId: "dummy",
+						Requests: make([]*proto.SingleOperation, 0),
+						Sender:   -1,
+					}
+
+					rpcPair := common.RPCPair{
+						Code: rp.messageCodes.ClientBatchRpc,
+						Obj:  &dummyClientBatch,
+					}
+
+					rp.incomingChan <- &rpcPair
+				}
+			}()
 		}
 
 	}

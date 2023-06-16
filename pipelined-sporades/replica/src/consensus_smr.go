@@ -32,10 +32,6 @@ func (rp *Replica) updateSMR() {
 
 	for head.Id != rp.consensus.lastCommittedBlock.Id {
 
-		if head.Parent == nil {
-			panic("Consensus block " + head.Id + "'s parent does not exist")
-		}
-
 		//	toCommit.append(head)
 		toCommit = append([]*proto.Pipelined_Sporades_Block{head}, toCommit...)
 
@@ -130,6 +126,9 @@ func (rp *Replica) updateApplicationLogic(commands []*proto.ClientBatch) []*prot
 func (rp *Replica) sendClientResponses(commands []*proto.ClientBatch) {
 
 	for i := 0; i < len(commands); i++ {
+		if commands[i].Sender == -1 {
+			continue
+		}
 		// send the response back to the client
 		resClientBatch := proto.ClientBatch{
 			UniqueId: commands[i].UniqueId,

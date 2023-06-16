@@ -164,7 +164,6 @@ func (rp *Replica) ConnectBootStrap() {
 */
 
 func (rp *Replica) Run() {
-
 	for true {
 		select {
 		case replicaMessage := <-rp.incomingChan:
@@ -305,7 +304,7 @@ func (rp *Replica) StartOutgoingLinks() {
 	for i := 0; i < rp.numReplicas; i++ {
 		go func(peer int) {
 			for true {
-				outgoingMessage := <-rp.outgoingReplicaMessageChans[i]
+				outgoingMessage := <-rp.outgoingReplicaMessageChans[peer]
 				rp.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
 				if rp.debugOn {
 					rp.debug("Invoked internal sent to "+strconv.Itoa(int(outgoingMessage.Peer)), 0)

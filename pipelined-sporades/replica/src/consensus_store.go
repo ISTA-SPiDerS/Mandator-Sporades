@@ -35,7 +35,7 @@ type AsyncConsensusStore struct {
 func (ms *AsyncConsensusStore) debug(message string, level int) {
 	if ms.debugOn {
 		if ms.debugLevel <= level {
-			fmt.Print(message)
+			fmt.Print(message + "\n")
 		}
 	}
 }
