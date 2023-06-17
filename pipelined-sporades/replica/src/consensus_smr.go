@@ -70,10 +70,8 @@ func (rp *Replica) updateSMR() {
 	// we have every block needed to commit
 	for i := 0; i < len(toCommit); i++ {
 		nextBlockToCommit := toCommit[i] // toCommit[i] is the next block to be committed
-		if rp.debugOn {
-			if nextBlockToCommit.Commands == nil {
-				panic("should not happen, commands field nil in " + fmt.Sprintf("%v", nextBlockToCommit))
-			}
+		if nextBlockToCommit.Commands == nil {
+			panic("should not happen, commands field nil in " + fmt.Sprintf("%v", nextBlockToCommit))
 		}
 
 		clientBatches := nextBlockToCommit.Commands.Requests
