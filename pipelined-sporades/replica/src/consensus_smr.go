@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pipelined-sporades/common"
 	"pipelined-sporades/proto"
+	"strconv"
 	"time"
 )
 
@@ -14,7 +15,7 @@ func (rp *Replica) handleClientBatch(batch *proto.ClientBatch) {
 	if rp.debugOn {
 		rp.debug("put incoming client batch to buffer: "+fmt.Sprintf("%v", batch), 0)
 	}
-	rp.propose(false)
+	rp.propose(false, false)
 }
 
 /*
@@ -69,13 +70,22 @@ func (rp *Replica) updateSMR() {
 	// we have every block needed to commit
 	for i := 0; i < len(toCommit); i++ {
 		nextBlockToCommit := toCommit[i] // toCommit[i] is the next block to be committed
+		if rp.debugOn {
+			if nextBlockToCommit.Commands == nil {
+				panic("should not happen, commands field nil in " + fmt.Sprintf("%v", nextBlockToCommit))
+			}
+		}
+
 		clientBatches := nextBlockToCommit.Commands.Requests
 		responses := rp.updateApplicationLogic(clientBatches)
 		if rp.debugOn {
-			rp.debug("Committed consensus block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime)), 0)
+			rp.debug("Committed consensus block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime))+" with "+strconv.Itoa(len(clientBatches))+" number of client batches", 1)
 		}
 		rp.consensus.lastCommittedBlock = nextBlockToCommit
 		rp.consensus.pipelinedSoFar--
+		if rp.debugOn {
+			rp.debug("pipeline length "+strconv.Itoa(rp.consensus.pipelinedSoFar), 0)
+		}
 		rp.consensus.consensusPool.Add(nextBlockToCommit)
 		rp.sendClientResponses(responses)
 		rp.removeDecidedItemsFromFutureProposals(clientBatches)
@@ -142,5 +152,8 @@ func (rp *Replica) sendClientResponses(commands []*proto.ClientBatch) {
 		}
 
 		rp.sendMessage(int32(resClientBatch.Sender), rpcPair)
+		if rp.debugOn {
+			rp.debug("sent a client response to "+strconv.Itoa(int(resClientBatch.Sender)), 1)
+		}
 	}
 }

@@ -21,6 +21,7 @@ func main() {
 	valLen := flag.Int("valLen", 8, "value length")
 	benchmarkMode := flag.Int("benchmarkMode", 0, "0: resident store, 1: redis")
 	pipelineLength := flag.Int("pipelineLength", 1, "pipeline length")
+	asyncbatchTime := flag.Int("asyncbatchTime", 10, "artifical delay for sporades messages in ms")
 
 	flag.Parse()
 
@@ -30,7 +31,7 @@ func main() {
 		panic(err)
 	}
 
-	rp := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *debugOn, *debugLevel, *viewTimeout, *benchmarkMode, *keyLen, *valLen, *pipelineLength)
+	rp := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *debugOn, *debugLevel, *viewTimeout, *benchmarkMode, *keyLen, *valLen, *pipelineLength, *asyncbatchTime)
 
 	rp.WaitForConnections()
 	rp.StartOutgoingLinks()

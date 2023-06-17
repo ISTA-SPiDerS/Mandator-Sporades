@@ -71,7 +71,7 @@ func (ms *AsyncConsensusStore) Add(block *proto.Pipelined_Sporades_Block) {
 			acks:           make([]int32, 0),
 		}
 		if ms.debugOn {
-			ms.debug("Added a new consensus block to consensus store with  "+fmt.Sprintf("%v", block.Id), 0)
+			ms.debug("Added a new consensus block to consensus store with  "+fmt.Sprintf("%v", block), -1)
 		}
 	}
 }
@@ -84,12 +84,12 @@ func (ms *AsyncConsensusStore) Get(id string) (*proto.Pipelined_Sporades_Block, 
 	block, ok := ms.ConsensusBlocks[id]
 	if !ok {
 		if ms.debugOn {
-			ms.debug("Requested consensus block does not exist, hence returning nil for id "+id, 0)
+			ms.debug("Requested consensus block does not exist, hence returning nil for id "+id, -1)
 		}
 		return nil, ok
 	} else {
 		if ms.debugOn {
-			ms.debug("Requested consensus block exists, hence returning the block for id "+id, 0)
+			ms.debug("Requested consensus block exists, hence returning the block for id "+id, -1)
 		}
 		return block.ConsensusBlock, ok
 	}

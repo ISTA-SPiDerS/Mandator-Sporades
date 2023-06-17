@@ -9,6 +9,7 @@ import (
 	"pipelined-sporades/common"
 	"pipelined-sporades/proto"
 	"strconv"
+	"time"
 )
 
 /*
@@ -88,7 +89,7 @@ func (rp *Replica) connectionListener(reader *bufio.Reader, id int32) {
 				Obj:  obj,
 			}
 			if rp.debugOn {
-				rp.debug("Pushed a message from "+strconv.Itoa(int(id)), 0)
+				rp.debug("Pushed a message from "+strconv.Itoa(int(id)), -1)
 			}
 		} else {
 			if rp.debugOn {
@@ -113,7 +114,7 @@ func (rp *Replica) ConnectToNode(id int32, address string, nodeType string) {
 	var b [4]byte
 	bs := b[:4]
 	counter := 0
-	for counter < 3 {
+	for counter < 1000000 {
 		counter++
 		conn, err := net.Dial("tcp", address)
 		if err == nil {
@@ -140,7 +141,7 @@ func (rp *Replica) ConnectToNode(id int32, address string, nodeType string) {
 			}
 			break
 		} else {
-			if counter == 3 {
+			if counter == 1000000 {
 				panic(fmt.Sprintf("node %v cannot be reached to establish a connection "+err.Error(), id))
 			}
 		}
@@ -169,7 +170,7 @@ func (rp *Replica) Run() {
 		case replicaMessage := <-rp.incomingChan:
 
 			if rp.debugOn {
-				rp.debug("Received replica message", 0)
+				rp.debug("Received replica message", -1)
 			}
 
 			switch replicaMessage.Code {
@@ -177,7 +178,7 @@ func (rp *Replica) Run() {
 			case rp.messageCodes.StatusRPC:
 				statusMessage := replicaMessage.Obj.(*proto.Status)
 				if rp.debugOn {
-					rp.debug("Status message from "+fmt.Sprintf("%#v", statusMessage.Sender), 0)
+					rp.debug("Status message from "+fmt.Sprintf("%#v", statusMessage.Sender), -1)
 				}
 				rp.handleStatus(statusMessage)
 				break
@@ -193,7 +194,7 @@ func (rp *Replica) Run() {
 			case rp.messageCodes.SporadesConsensus:
 				sporadesConsensusMessage := replicaMessage.Obj.(*proto.Pipelined_Sporades)
 				if rp.debugOn {
-					rp.debug("Sporades consensus message from "+fmt.Sprintf("%#v", sporadesConsensusMessage.Sender), 0)
+					rp.debug("Sporades consensus message from "+fmt.Sprintf("%#v", sporadesConsensusMessage.Sender), -1)
 				}
 				rp.handleSporadesConsensus(sporadesConsensusMessage)
 				break
@@ -212,6 +213,11 @@ func (rp *Replica) Run() {
 func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 	peerType := rp.getNodeType(peer)
 	if peerType == "replica" {
+
+		if rpcPair.Code == rp.messageCodes.SporadesConsensus {
+			time.Sleep(time.Duration(rp.asyncbatchTime) * time.Millisecond)
+		}
+
 		w := rp.outgoingReplicaWriters[peer]
 		if w == nil {
 			panic("replica not found")
@@ -243,7 +249,7 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 		}
 		rp.outgoingReplicaWriterMutexs[peer].Unlock()
 		if rp.debugOn {
-			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), 0)
+			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), -1)
 		}
 	} else if peerType == "client" {
 		w := rp.outgoingClientWriters[peer]
@@ -254,7 +260,7 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 		err := w.WriteByte(rpcPair.Code)
 		if err != nil {
 			if rp.debugOn {
-				rp.debug("Error writing message code byte:"+err.Error(), 0)
+				rp.debug("Error writing message code byte:"+err.Error(), 1)
 			}
 			rp.outgoingClientWriterMutexs[peer].Unlock()
 			return
@@ -262,7 +268,7 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 		err = rpcPair.Obj.Marshal(w)
 		if err != nil {
 			if rp.debugOn {
-				rp.debug("Error while marshalling:"+err.Error(), 0)
+				rp.debug("Error while marshalling:"+err.Error(), 1)
 			}
 			rp.outgoingClientWriterMutexs[peer].Unlock()
 			return
@@ -270,14 +276,14 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 		err = w.Flush()
 		if err != nil {
 			if rp.debugOn {
-				rp.debug("Error while flushing:"+err.Error(), 0)
+				rp.debug("Error while flushing:"+err.Error(), 1)
 			}
 			rp.outgoingClientWriterMutexs[peer].Unlock()
 			return
 		}
 		rp.outgoingClientWriterMutexs[peer].Unlock()
 		if rp.debugOn {
-			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), 0)
+			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), 1)
 		}
 	} else {
 		panic("Unknown id from node name " + strconv.Itoa(int(peer)))
@@ -296,7 +302,7 @@ func (rp *Replica) StartOutgoingLinks() {
 				outgoingMessage := <-rp.outgoingClientMessageChan
 				rp.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
 				if rp.debugOn {
-					rp.debug("Invoked internal sent to "+strconv.Itoa(int(outgoingMessage.Peer)), 0)
+					rp.debug("Invoked internal sent to "+strconv.Itoa(int(outgoingMessage.Peer)), 1)
 				}
 			}
 		}()
@@ -307,7 +313,7 @@ func (rp *Replica) StartOutgoingLinks() {
 				outgoingMessage := <-rp.outgoingReplicaMessageChans[peer]
 				rp.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
 				if rp.debugOn {
-					rp.debug("Invoked internal sent to "+strconv.Itoa(int(outgoingMessage.Peer)), 0)
+					rp.debug("Invoked internal sent to "+strconv.Itoa(int(outgoingMessage.Peer)), -1)
 				}
 			}
 		}(i)
@@ -328,7 +334,7 @@ func (rp *Replica) sendMessage(peer int32, rpcPair common.RPCPair) {
 			Peer:    peer,
 		}
 		if rp.debugOn {
-			rp.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), 0)
+			rp.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), -1)
 		}
 	} else if peerType == "client" {
 		rp.outgoingClientMessageChan <- &common.OutgoingRPC{
@@ -336,7 +342,7 @@ func (rp *Replica) sendMessage(peer int32, rpcPair common.RPCPair) {
 			Peer:    peer,
 		}
 		if rp.debugOn {
-			rp.debug("Added RPC pair to outgoing channel to client "+strconv.Itoa(int(peer)), 0)
+			rp.debug("Added RPC pair to outgoing channel to client "+strconv.Itoa(int(peer)), 1)
 		}
 	} else {
 		panic("unknown peer type")

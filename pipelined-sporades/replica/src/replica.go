@@ -62,7 +62,8 @@ type Replica struct {
 	incomingRequests []*proto.ClientBatch
 	pipelineLength   int
 
-	finished bool // to finish consensus
+	finished       bool // to finish consensus
+	asyncbatchTime int
 }
 
 const incomingBufferSize = 1000000 // the size of the buffer which receives all the incoming messages
@@ -72,7 +73,7 @@ const outgoingBufferSize = 1000000 // size of the buffer that collects messages 
 	instantiate a new replica instance, allocate the buffers
 */
 
-func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, benchmarkMode int, keyLen int, valLen int, pipelineLength int) *Replica {
+func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, benchmarkMode int, keyLen int, valLen int, pipelineLength int, asyncbatchTime int) *Replica {
 	rp := Replica{
 		name:          name,
 		listenAddress: common.GetAddress(cfg.Peers, name),
@@ -113,6 +114,7 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		incomingRequests: make([]*proto.ClientBatch, 0),
 		pipelineLength:   pipelineLength,
 		finished:         false,
+		asyncbatchTime:   asyncbatchTime,
 	}
 
 	// initialize clientAddrList

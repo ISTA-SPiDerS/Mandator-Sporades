@@ -27,7 +27,7 @@ func (cl *Client) ConnectToReplicas() {
 	//connect to replicas
 	for name, address := range cl.replicaAddrList {
 		counter := 0
-		for counter < 3 {
+		for counter < 1000000 {
 			counter++
 			conn, err := net.Dial("tcp", address)
 			if err == nil {
@@ -42,7 +42,7 @@ func (cl *Client) ConnectToReplicas() {
 				}
 				break
 			} else {
-				if counter == 3 {
+				if counter == 1000000 {
 					panic(fmt.Sprintf("%v", err))
 				}
 			}
@@ -116,22 +116,22 @@ func (cl *Client) connectionListener(reader *bufio.Reader, id int32) {
 			if err = obj.Unmarshal(reader); err != nil {
 				if cl.debugOn {
 					cl.debug("error while unmarshalling from "+strconv.Itoa(int(id)), 0)
-					return
-				}
-				cl.incomingChan <- &common.RPCPair{
-					Code: msgType,
-					Obj:  obj,
-				}
-				if cl.debugOn {
-					cl.debug("Pushed a message from "+strconv.Itoa(int(id)), 0)
-				}
-
-			} else {
-				if cl.debugOn {
-					cl.debug("error received unknown message type from "+strconv.Itoa(int(id)), 0)
 				}
 				return
 			}
+			cl.incomingChan <- &common.RPCPair{
+				Code: msgType,
+				Obj:  obj,
+			}
+			if cl.debugOn {
+				cl.debug("Pushed a message from "+strconv.Itoa(int(id)), 0)
+			}
+
+		} else {
+			if cl.debugOn {
+				cl.debug("error received unknown message type from "+strconv.Itoa(int(id)), 0)
+			}
+			return
 		}
 	}
 }
@@ -207,7 +207,7 @@ func (cl *Client) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 	}
 	cl.outgoingReplicaWriterMutexs[peer].Unlock()
 	if cl.debugOn {
-		cl.debug("Internal sent message to "+strconv.Itoa(int(peer)), 0)
+		cl.debug("Internal sent message to "+strconv.Itoa(int(peer)), -1)
 	}
 }
 
@@ -222,7 +222,7 @@ func (cl *Client) StartOutgoingLinks() {
 				outgoingMessage := <-cl.outgoingMessageChan
 				cl.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
 				if cl.debugOn {
-					cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), 0)
+					cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), -1)
 				}
 			}
 		}()
@@ -239,6 +239,6 @@ func (cl *Client) sendMessage(peer int32, rpcPair common.RPCPair) {
 		Peer:    peer,
 	}
 	if cl.debugOn {
-		cl.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), 0)
+		cl.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), -1)
 	}
 }

@@ -44,7 +44,7 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 					rp.debug("invoking propose after becoming the leader in view "+fmt.Sprintf("%v", message.V), 0)
 				}
 				rp.consensus.pipelinedSoFar = 0
-				rp.propose(true)
+				rp.propose(true, true)
 			}
 			return true
 		} else {
@@ -100,7 +100,7 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 			if err != nil {
 				panic(err.Error())
 			}
-			vote_block_high.Commands = nil
+			vote_block_high.Commands.Requests = nil
 			voteMsg := proto.Pipelined_Sporades{
 				Sender:      rp.name,
 				Receiver:    nextLeader,
@@ -206,7 +206,7 @@ func (rp *Replica) handleConsensusInternalTimeout(message *proto.Pipelined_Spora
 	propose a batch of client commands in the sync path
 */
 
-func (rp *Replica) propose(sendHistory bool) {
+func (rp *Replica) propose(sendHistory bool, immediate bool) {
 	if rp.consensus.isAsync {
 		return // we are in the async path
 	}
@@ -217,14 +217,12 @@ func (rp *Replica) propose(sendHistory bool) {
 
 	if rp.consensus.pipelinedSoFar > rp.pipelineLength {
 		if rp.debugOn {
-			rp.debug("did not propose because pipeline length full", 0)
+			rp.debug("did not propose because pipeline length full with outstanding proposals "+strconv.Itoa(rp.consensus.pipelinedSoFar), 0)
 		}
 		return
 	}
 
-	rp.consensus.pipelinedSoFar++
-
-	if len(rp.incomingRequests) >= rp.replicaBatchSize || (time.Now().Sub(rp.consensus.lastProposedTime).Microseconds() > int64(rp.replicaBatchTime)) {
+	if len(rp.incomingRequests) >= rp.replicaBatchSize || (time.Now().Sub(rp.consensus.lastProposedTime).Microseconds() > int64(rp.replicaBatchTime)) || immediate {
 
 		if rp.debugOn {
 			rp.debug("proposing a new batch in the sync path", 0)
@@ -239,7 +237,7 @@ func (rp *Replica) propose(sendHistory bool) {
 			rp.incomingRequests = rp.incomingRequests[rp.replicaBatchSize:]
 		}
 
-		commands := proto.ReplicaBatch{
+		commands := &proto.ReplicaBatch{
 			UniqueId: strconv.Itoa(int(rp.name)) + "." + strconv.Itoa(int(rp.consensus.vCurr)) + "." + strconv.Itoa(int(rp.consensus.rCurr+1)) + "." + "r" + "." + strconv.Itoa(int(-1)),
 			Requests: batches,
 			Sender:   int64(rp.name),
@@ -257,7 +255,7 @@ func (rp *Replica) propose(sendHistory bool) {
 				R:        rp.consensus.rCurr + 1,
 				ParentId: rp.consensus.blockHigh.Id,
 				Parent:   rp.makeNChain(rp.consensus.blockHigh, int(height)),
-				Commands: &commands,
+				Commands: commands,
 				Level:    -1,
 			}
 		} else {
@@ -268,7 +266,7 @@ func (rp *Replica) propose(sendHistory bool) {
 				R:        rp.consensus.rCurr + 1,
 				ParentId: rp.consensus.blockHigh.Id,
 				Parent:   nil,
-				Commands: &commands,
+				Commands: commands,
 				Level:    -1,
 			}
 		}
@@ -309,6 +307,10 @@ func (rp *Replica) propose(sendHistory bool) {
 		}
 
 		rp.consensus.lastProposedTime = time.Now()
+		rp.consensus.pipelinedSoFar++
+		if rp.debugOn {
+			rp.debug("pipeline length "+strconv.Itoa(rp.consensus.pipelinedSoFar), 0)
+		}
 
 		// update rank
 
@@ -388,12 +390,17 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.Pipelined_Sporades) bo
 					}
 				}
 
-				rp.consensus.blockCommit = newBlockCommit
+				savedBlock, ok := rp.consensus.consensusPool.Get(newBlockCommit.Id)
+
+				if !ok {
+					panic("voted block_commit does not appear in my store")
+				}
+				rp.consensus.blockCommit = savedBlock
 				if rp.debugOn {
 					rp.debug("sync leader updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 0)
 				}
 				rp.updateSMR()
-				rp.propose(false)
+				rp.propose(false, true)
 			}
 			return true
 		} else {
