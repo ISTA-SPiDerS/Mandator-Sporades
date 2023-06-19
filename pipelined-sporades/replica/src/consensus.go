@@ -463,7 +463,7 @@ func (rp *Replica) makeNChain(blockOri *proto.Pipelined_Sporades_Block, n int) *
 	Deep copy a consensus block
 */
 
-func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Sporades_Block, error) {
+func CloneMyStructJson(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Sporades_Block, error) {
 	origJSON, err := json.Marshal(orig)
 	if err != nil {
 		panic(err)
@@ -473,6 +473,38 @@ func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Spora
 		return nil, err
 	}
 	return &clone, nil
+}
+
+/*
+	manual copy a consensus block
+*/
+
+func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Sporades_Block, error) {
+	rtnBlc := &proto.Pipelined_Sporades_Block{
+		Id:       orig.Id,
+		V:        orig.V,
+		R:        orig.R,
+		ParentId: orig.ParentId,
+		Parent:   nil,
+		Commands: &proto.ReplicaBatch{
+			UniqueId: orig.Commands.UniqueId,
+			Requests: make([]*proto.ClientBatch, len(orig.Commands.Requests)),
+			Sender:   orig.Commands.Sender,
+		},
+		Level: orig.Level,
+	}
+	for i := 0; i < len(orig.Commands.Requests); i++ {
+		rtCltB := &proto.ClientBatch{
+			UniqueId: orig.Commands.Requests[i].UniqueId,
+			Requests: make([]*proto.SingleOperation, len(orig.Commands.Requests[i].Requests)),
+			Sender:   orig.Commands.Requests[i].Sender,
+		}
+		for j := 0; j < len(orig.Commands.Requests[i].Requests); j++ {
+			rtCltB.Requests[j] = orig.Commands.Requests[i].Requests[j]
+		}
+		rtnBlc.Commands.Requests[i] = rtCltB
+	}
+	return rtnBlc, nil
 }
 
 /*
