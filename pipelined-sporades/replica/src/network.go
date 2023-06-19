@@ -283,7 +283,7 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 		}
 		rp.outgoingClientWriterMutexs[peer].Unlock()
 		if rp.debugOn {
-			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), 1)
+			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), -1)
 		}
 	} else {
 		panic("Unknown id from node name " + strconv.Itoa(int(peer)))
@@ -302,7 +302,7 @@ func (rp *Replica) StartOutgoingLinks() {
 				outgoingMessage := <-rp.outgoingClientMessageChan
 				rp.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
 				if rp.debugOn {
-					rp.debug("Invoked internal sent to "+strconv.Itoa(int(outgoingMessage.Peer)), 1)
+					rp.debug("Invoked internal sent to "+strconv.Itoa(int(outgoingMessage.Peer)), -1)
 				}
 			}
 		}()

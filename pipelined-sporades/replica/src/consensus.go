@@ -55,8 +55,12 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *Sporades
 		R:        0,
 		ParentId: "",
 		Parent:   nil,
-		Commands: nil,
-		Level:    -1,
+		Commands: &proto.ReplicaBatch{
+			UniqueId: "nil",
+			Requests: make([]*proto.ClientBatch, 0),
+			Sender:   -1,
+		},
+		Level: -1,
 	}
 
 	asyncConsensus := SporadesConsensus{
