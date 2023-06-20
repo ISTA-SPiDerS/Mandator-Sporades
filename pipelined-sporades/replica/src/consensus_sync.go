@@ -26,6 +26,11 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 				if rp.debugOn {
 					rp.debug("received n-f number of new view messages in view "+fmt.Sprintf("%v", message.V), 0)
 				}
+
+				if rp.consensus.viewTimer != nil {
+					rp.consensus.viewTimer.Cancel()
+					rp.consensus.viewTimer = nil
+				}
 				// if we have collected a majority of new view messages, set block_high to be the highest received block_high in the new view messages
 				highest_block_high := rp.extractHighestRankedBlockHigh(rp.consensus.newViewMessages[message.V])
 				if rp.hasGreaterRank(highest_block_high.V, highest_block_high.R, rp.consensus.blockHigh.V, rp.consensus.blockHigh.R) {
@@ -45,6 +50,11 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 				}
 				rp.consensus.pipelinedSoFar = 0
 				rp.propose(true, true)
+				if rp.consensus.viewTimer != nil {
+					rp.consensus.viewTimer.Cancel()
+					rp.consensus.viewTimer = nil
+				}
+				rp.setViewTimer()
 			}
 			return true
 		} else {
@@ -224,6 +234,11 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 
 	if len(rp.incomingRequests) >= rp.replicaBatchSize || (time.Now().Sub(rp.consensus.lastProposedTime).Microseconds() > int64(rp.replicaBatchTime)) || immediate {
 
+		if rp.consensus.viewTimer != nil {
+			rp.consensus.viewTimer.Cancel()
+			rp.consensus.viewTimer = nil
+		}
+
 		if rp.debugOn {
 			rp.debug("proposing a new batch in the sync path", 0)
 		}
@@ -378,6 +393,11 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.Pipelined_Sporades) bo
 			//	if for this v,r the array vote replies has n-f blocks
 			votes, _ := rp.consensus.voteReplies[key]
 			if len(votes) == rp.numReplicas/2+1 {
+
+				if rp.consensus.viewTimer != nil {
+					rp.consensus.viewTimer.Cancel()
+					rp.consensus.viewTimer = nil
+				}
 
 				//	If n-f received vote messages have the same block high and the rank of this received block high is (v,r):
 				blockHigh, isSameHigh := rp.hasSameBlockHigh(votes)

@@ -499,6 +499,10 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 					rp.debug("Exiting view change and sending new view to "+strconv.Itoa(int(nextLeader))+" after the view change", 0)
 				}
 				// start the timeout
+				if rp.consensus.viewTimer != nil {
+					rp.consensus.viewTimer.Cancel()
+					rp.consensus.viewTimer = nil
+				}
 				rp.setViewTimer()
 			}
 			return true

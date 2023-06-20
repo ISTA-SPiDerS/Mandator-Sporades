@@ -342,7 +342,7 @@ func (rp *Replica) sendMessage(peer int32, rpcPair common.RPCPair) {
 			Peer:    peer,
 		}
 		if rp.debugOn {
-			rp.debug("Added RPC pair to outgoing channel to client "+strconv.Itoa(int(peer)), 1)
+			rp.debug("Added RPC pair to outgoing channel to client "+strconv.Itoa(int(peer)), -1)
 		}
 	} else {
 		panic("unknown peer type")

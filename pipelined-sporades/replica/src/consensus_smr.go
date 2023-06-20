@@ -151,7 +151,7 @@ func (rp *Replica) sendClientResponses(commands []*proto.ClientBatch) {
 
 		rp.sendMessage(int32(resClientBatch.Sender), rpcPair)
 		if rp.debugOn {
-			rp.debug("sent a client response to "+strconv.Itoa(int(resClientBatch.Sender)), 1)
+			rp.debug("sent a client response to "+strconv.Itoa(int(resClientBatch.Sender)), -1)
 		}
 	}
 }
