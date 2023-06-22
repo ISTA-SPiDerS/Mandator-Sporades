@@ -24,7 +24,7 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 			}
 			if len(rp.consensus.newViewMessages[message.V]) == (rp.numReplicas/2 + 1) {
 				if rp.debugOn {
-					rp.debug("received n-f number of new view messages in view "+fmt.Sprintf("%v", message.V), 0)
+					rp.debug("received n-f number of new view messages in view "+fmt.Sprintf("%v", message.V), 1)
 				}
 
 				if rp.consensus.viewTimer != nil {
@@ -46,9 +46,10 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 					}
 				}
 				if rp.debugOn {
-					rp.debug("invoking propose after becoming the leader in view "+fmt.Sprintf("%v", message.V), 0)
+					rp.debug("invoking propose after becoming the leader in view "+fmt.Sprintf("%v", message.V), 1)
 				}
-				rp.consensus.pipelinedSoFar = 0
+				rp.consensus.pipelinedRequests = 0
+				rp.consensus.sentFirstProposal[rp.consensus.vCurr] = true
 				rp.propose(true, true)
 				if rp.consensus.viewTimer != nil {
 					rp.consensus.viewTimer.Cancel()
@@ -59,13 +60,13 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 			return true
 		} else {
 			if rp.debugOn {
-				rp.debug("delayed processing new view message"+fmt.Sprintf("%v", message)+" because i am still in async mode", 0)
+				rp.debug("delayed processing new view message"+fmt.Sprintf("%v", message)+" because i am still in async mode", 1)
 			}
 			return false
 		}
 	} else {
 		if rp.debugOn {
-			rp.debug("received a new view for an older view, hence rejected ", 0)
+			rp.debug("received a new view for an older view, hence rejected ", 1)
 		}
 		return true // we do not need this message, so just remove it
 	}
@@ -103,7 +104,7 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 			// 	send <vote, v cur , r cur , block high > to Vcur leader
 			nextLeader := rp.getLeader(rp.consensus.vCurr)
 			if rp.debugOn {
-				rp.debug("Sending sync vote to "+strconv.Itoa(int(nextLeader)), 0)
+				rp.debug("Sending sync vote to "+strconv.Itoa(int(nextLeader)), 1)
 			}
 
 			vote_block_high, err := CloneMyStruct(rp.consensus.blockHigh)
@@ -131,7 +132,7 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 
 			rp.sendMessage(nextLeader, rpcPair)
 			if rp.debugOn {
-				rp.debug("Sent sync vote to "+strconv.Itoa(int(nextLeader)), 0)
+				rp.debug("Sent sync vote to "+strconv.Itoa(int(nextLeader)), 1)
 			}
 			// start the timeout
 			rp.setViewTimer()
@@ -139,12 +140,12 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 		} else {
 			if message.V > rp.consensus.vCurr {
 				if rp.debugOn {
-					rp.debug("cannot process the propose message "+fmt.Sprintf("%v", message)+" because I still haven't changed my mode to sync ", 0)
+					rp.debug("cannot process the propose message "+fmt.Sprintf("%v", message)+" because I still haven't changed my mode to sync ", 1)
 				}
 				return false
 			} else {
 				if rp.debugOn {
-					rp.debug("dismissed old propose sync message "+fmt.Sprintf("%v", message), 0)
+					rp.debug("dismissed old propose sync message "+fmt.Sprintf("%v", message), 1)
 				}
 				return true // discard this message
 			}
@@ -193,20 +194,20 @@ func (rp *Replica) handleConsensusInternalTimeout(message *proto.Pipelined_Spora
 
 				rp.sendMessage(name, rpcPair)
 				if rp.debugOn {
-					rp.debug("Sent timeout to "+strconv.Itoa(int(name)), 0)
+					rp.debug("Sent timeout to "+strconv.Itoa(int(name)), 1)
 				}
 			}
 
 			return true
 		} else {
 			if rp.debugOn {
-				rp.debug("Rejected an an internal timeout notification because I am already in asycn I am in "+fmt.Sprintf("view: %v, round: %v", rp.consensus.vCurr, rp.consensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+				rp.debug("Rejected an an internal timeout notification because I am already in asycn I am in "+fmt.Sprintf("view: %v, round: %v", rp.consensus.vCurr, rp.consensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 1)
 			}
 			return true // we are already in the async path
 		}
 	} else {
 		if rp.debugOn {
-			rp.debug("Rejected an internal timeout message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.consensus.vCurr, rp.consensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+			rp.debug("Rejected an internal timeout message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.consensus.vCurr, rp.consensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 1)
 		}
 		return true // this is an old message
 	}
@@ -221,13 +222,17 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 		return // we are in the async path
 	}
 
+	if !rp.consensus.sentFirstProposal[rp.consensus.vCurr] {
+		return
+	}
+
 	if rp.name != rp.getLeader(rp.consensus.vCurr) {
 		return // i am not the leader
 	}
 
-	if rp.consensus.pipelinedSoFar > rp.pipelineLength {
+	if rp.consensus.pipelinedRequests >= rp.pipelineLength {
 		if rp.debugOn {
-			rp.debug("did not propose because pipeline length full with outstanding proposals "+strconv.Itoa(rp.consensus.pipelinedSoFar), 0)
+			rp.debug("did not propose because pipeline length full with outstanding proposals "+strconv.Itoa(rp.consensus.pipelinedRequests), 1)
 		}
 		return
 	}
@@ -240,7 +245,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 		}
 
 		if rp.debugOn {
-			rp.debug("proposing a new batch in the sync path", 0)
+			rp.debug("proposing a new batch in the sync path", 1)
 		}
 
 		var batches []*proto.ClientBatch
@@ -318,13 +323,13 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 			rp.sendMessage(name, rpcPair)
 		}
 		if rp.debugOn {
-			rp.debug("broadcast propose type 1 ", 0)
+			rp.debug("broadcast propose type 1 ", 1)
 		}
 
 		rp.consensus.lastProposedTime = time.Now()
-		rp.consensus.pipelinedSoFar++
+		rp.incrementPipelined()
 		if rp.debugOn {
-			rp.debug("pipeline length "+strconv.Itoa(rp.consensus.pipelinedSoFar), 0)
+			rp.debug("outstanding slots "+strconv.Itoa(rp.consensus.pipelinedRequests), 1)
 		}
 
 		// update rank
@@ -365,7 +370,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 
 		rp.sendMessage(rp.name, rpcPair)
 		if rp.debugOn {
-			rp.debug("Sent self vote", 0)
+			rp.debug("Sent self vote", 1)
 		}
 
 		// start the timeout
@@ -417,21 +422,20 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.Pipelined_Sporades) bo
 				}
 				rp.consensus.blockCommit = savedBlock
 				if rp.debugOn {
-					rp.debug("sync leader updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 0)
+					rp.debug("sync leader updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 1)
 				}
 				rp.updateSMR()
-				rp.propose(false, true)
 			}
 			return true
 		} else {
 			if rp.debugOn {
-				rp.debug("Rejected a vote sync because i am in the async path of the same view ", 0)
+				rp.debug("Rejected a vote sync because i am in the async path of the same view ", 1)
 			}
 			return true
 		}
 	} else {
 		if rp.debugOn {
-			rp.debug("Rejected a sync vote message because its for a previous view", 0)
+			rp.debug("Rejected a sync vote message because its for a previous view", 1)
 		}
 		return true
 	}

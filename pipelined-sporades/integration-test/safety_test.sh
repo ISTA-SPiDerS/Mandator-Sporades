@@ -17,11 +17,11 @@ pkill client; pkill client; pkill client; pkill client; pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${replica_path} --name 1 --batchSize "${batchSize}" --batchTime "${batchTime}"      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3 >${output_path}1.log &
-nohup ./${replica_path} --name 2 --batchSize "${batchSize}" --batchTime "${batchTime}"      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}2.log &
-nohup ./${replica_path} --name 3 --batchSize "${batchSize}" --batchTime "${batchTime}"      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}3.log &
-nohup ./${replica_path} --name 4 --batchSize "${batchSize}" --batchTime "${batchTime}"      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}4.log &
-nohup ./${replica_path} --name 5 --batchSize "${batchSize}" --batchTime "${batchTime}"      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}5.log &
+nohup ./${replica_path} --name 1 --batchSize "${batchSize}" --batchTime "${batchTime}"   --debugOn      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3 >${output_path}1.log &
+nohup ./${replica_path} --name 2 --batchSize "${batchSize}" --batchTime "${batchTime}"   --debugOn      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}2.log &
+nohup ./${replica_path} --name 3 --batchSize "${batchSize}" --batchTime "${batchTime}"   --debugOn      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}3.log &
+nohup ./${replica_path} --name 4 --batchSize "${batchSize}" --batchTime "${batchTime}"   --debugOn      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}4.log &
+nohup ./${replica_path} --name 5 --batchSize "${batchSize}" --batchTime "${batchTime}"   --debugOn      --debugLevel 1 --viewTimeout "${viewTimeoutTime}" --pipelineLength "${pipelineLength}" --logFilePath ${output_path} --asyncbatchTime 3  >${output_path}5.log &
 
 echo "Started 5 replicas"
 

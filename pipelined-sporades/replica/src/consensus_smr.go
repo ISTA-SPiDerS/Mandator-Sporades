@@ -11,6 +11,10 @@ import (
 // upon receiving a client batch, add the batches to the buffer
 
 func (rp *Replica) handleClientBatch(batch *proto.ClientBatch) {
+	if rp.logPrinted {
+		return
+	}
+
 	rp.incomingRequests = append(rp.incomingRequests, batch)
 	if rp.debugOn {
 		rp.debug("put incoming client batch to buffer: "+fmt.Sprintf("%v", batch), 0)
@@ -49,9 +53,9 @@ func (rp *Replica) updateSMR() {
 		} else {
 			// request the consensus block from some random peer
 			if rp.debugOn {
-				rp.debug("Consensus block "+parent_id+" does not exist, sending an external request", 0)
+				rp.debug("Consensus block "+parent_id+" does not exist, sending an external request", 1)
 			}
-			rp.sendExternalConsensusRequest(head.Id)
+			rp.sendExternalConsensusRequest(parent_id)
 			return // because we are missing the blocks in the history
 		}
 
@@ -77,14 +81,18 @@ func (rp *Replica) updateSMR() {
 		clientBatches := nextBlockToCommit.Commands.Requests
 		responses := rp.updateApplicationLogic(clientBatches)
 		if rp.debugOn {
-			rp.debug("Committed consensus block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime))+" with "+strconv.Itoa(len(clientBatches))+" number of client batches", 1)
+			senders := make([]int64, 0)
+			for b := 0; b < len(responses); b++ {
+				senders = append(senders, responses[b].Sender)
+			}
+			rp.debug("Committed block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime))+" with "+strconv.Itoa(len(clientBatches))+" client batches from "+fmt.Sprintf("%v", senders), 1)
 		}
 		rp.consensus.lastCommittedBlock = nextBlockToCommit
-		rp.consensus.pipelinedSoFar--
+		rp.decrementPipelined()
 		if rp.debugOn {
-			rp.debug("pipeline length "+strconv.Itoa(rp.consensus.pipelinedSoFar), 0)
+			rp.debug("pipeline length "+strconv.Itoa(rp.consensus.pipelinedRequests), 0)
 		}
-		rp.consensus.consensusPool.Add(nextBlockToCommit)
+
 		rp.sendClientResponses(responses)
 		rp.removeDecidedItemsFromFutureProposals(clientBatches)
 	}
