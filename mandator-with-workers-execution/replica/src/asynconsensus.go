@@ -157,6 +157,9 @@ func (rp *Replica) sendGenesisConsensusVote() {
 func (rp *Replica) setViewTimer() {
 
 	rp.asyncConsensus.viewTimer = common.NewTimerWithCancel(time.Duration(rp.viewTimeout) * time.Microsecond)
+	vCurr := rp.asyncConsensus.vCurr
+	rCurr := rp.asyncConsensus.rCurr
+
 	rp.asyncConsensus.viewTimer.SetTimeoutFuntion(func() {
 		// this function runs in a seperate thread, hence we do not send timeout message in this function, instead send a timeout-internal signal
 		internalTimeoutNotification := proto.AsyncConsensus{
@@ -165,8 +168,8 @@ func (rp *Replica) setViewTimer() {
 			UniqueId:    "",
 			Type:        6,
 			Note:        "",
-			V:           rp.asyncConsensus.vCurr,
-			R:           rp.asyncConsensus.rCurr,
+			V:           vCurr,
+			R:           rCurr,
 			BlockHigh:   nil,
 			BlockNew:    nil,
 			BlockCommit: nil,
