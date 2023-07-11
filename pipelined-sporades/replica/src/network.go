@@ -149,7 +149,7 @@ func (rp *Replica) ConnectToNode(id int32, address string, nodeType string) {
 }
 
 /*
-	Connect to all replicas on bootstrap
+	connect to all replicas on bootstrap
 */
 
 func (rp *Replica) ConnectBootStrap() {
@@ -215,7 +215,10 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 	if peerType == "replica" {
 
 		if rpcPair.Code == rp.messageCodes.SporadesConsensus {
-			time.Sleep(time.Duration(rp.asyncbatchTime) * time.Millisecond)
+			sporadesMessage := rpcPair.Obj.(*proto.Pipelined_Sporades)
+			if sporadesMessage.Type == 1 || sporadesMessage.Type == 4 {
+				time.Sleep(time.Duration(rp.networkbatchTime) * time.Millisecond)
+			}
 		}
 
 		w := rp.outgoingReplicaWriters[peer]
@@ -286,7 +289,7 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), -1)
 		}
 	} else {
-		panic("Unknown id from node name " + strconv.Itoa(int(peer)))
+		panic("Unknown id for node name " + strconv.Itoa(int(peer)))
 	}
 }
 

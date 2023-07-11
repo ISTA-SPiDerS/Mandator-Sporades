@@ -3,14 +3,12 @@ package src
 import (
 	"bufio"
 	"fmt"
-	"math/rand"
 	"os"
 	"pipelined-sporades/common"
 	"pipelined-sporades/configuration"
 	"pipelined-sporades/proto"
 	"strconv"
 	"sync"
-	"time"
 )
 
 /*
@@ -62,10 +60,13 @@ type Replica struct {
 	incomingRequests []*proto.ClientBatch
 	pipelineLength   int
 
-	finished       bool // to finish consensus
-	asyncbatchTime int
+	finished         bool // to finish consensus
+	networkbatchTime int  // network level batchTime in milli seconds
 
 	rejectedCount int // number of messages rejected because self is still not updated to a rank
+
+	isAsyncSim      bool
+	asyncSimTimeout int
 }
 
 const incomingBufferSize = 1000000 // the size of the buffer which receives all the incoming messages
@@ -75,7 +76,7 @@ const outgoingBufferSize = 1000000 // size of the buffer that collects messages 
 	instantiate a new replica instance, allocate the buffers
 */
 
-func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, benchmarkMode int, keyLen int, valLen int, pipelineLength int, asyncbatchTime int) *Replica {
+func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, benchmarkMode int, keyLen int, valLen int, pipelineLength int, networkbatchTime int, isAsyncSim bool, asyncSimTimeout int) *Replica {
 	rp := Replica{
 		name:          name,
 		listenAddress: common.GetAddress(cfg.Peers, name),
@@ -116,8 +117,10 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		incomingRequests: make([]*proto.ClientBatch, 0),
 		pipelineLength:   pipelineLength,
 		finished:         false,
-		asyncbatchTime:   asyncbatchTime,
+		networkbatchTime: networkbatchTime,
 		rejectedCount:    0,
+		isAsyncSim:       isAsyncSim,
+		asyncSimTimeout:  asyncSimTimeout,
 	}
 
 	// initialize clientAddrList
@@ -141,8 +144,6 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 	rp.RegisterRPC(new(proto.ClientBatch), rp.messageCodes.ClientBatchRpc)
 	rp.RegisterRPC(new(proto.Status), rp.messageCodes.StatusRPC)
 	rp.RegisterRPC(new(proto.Pipelined_Sporades), rp.messageCodes.SporadesConsensus)
-
-	rand.Seed(time.Now().UnixNano() + int64(rp.name))
 
 	if rp.debugOn {
 		rp.debug("Registered RPCs in the table", 0)

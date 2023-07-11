@@ -2,6 +2,7 @@ package src
 
 import (
 	"fmt"
+	"math/rand"
 	"pipelined-sporades/common"
 	"pipelined-sporades/proto"
 	"strconv"
@@ -305,6 +306,14 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 		if rp.debugOn {
 			rp.debug("broadcasting propose type 1 "+fmt.Sprintf("%v", newBlock), 0)
 		}
+
+		if rp.isAsyncSim {
+			n := rand.Intn(rp.numReplicas) + 1
+			if int32(n) == rp.name {
+				time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
+			}
+		}
+
 		for name, _ := range rp.replicaAddrList {
 			if name == rp.name {
 				continue // we do not send to self in pipelined version
