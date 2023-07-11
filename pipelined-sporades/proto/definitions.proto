@@ -1,15 +1,17 @@
 syntax = "proto3";
 option go_package = "proto/";
 
-/*
-  Client batch refers to a client request batch, or a client response batch
-  Client request batch is sent by a client once it has collected a batch of client requests
-  Client response batch is sent by a replica node
-*/
+
 
 message SingleOperation {
   string command = 1;
 }
+
+/*
+  Client batch refers to a client request batch, or a client response batch
+  Client request batch is sent by a client once it has collected a batch of client requests
+  Client response batch is sent by a replica
+*/
 
 message ClientBatch {
   string unique_id = 1;
@@ -59,7 +61,7 @@ message Pipelined_Sporades {
     string parentId = 4; // id of the parent
     Block parent = 5; // length of recursion depends on the message type
     ReplicaBatch commands = 6;
-    int32 level = 7; // for the fallback mode
+    int32 level = 7; // for the fallback level
   }
   Block blockHigh = 8;
   Block blockNew = 9;

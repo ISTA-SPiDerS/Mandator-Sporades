@@ -386,7 +386,7 @@ type Pipelined_Sporades_Block struct {
 	ParentId string                    `protobuf:"bytes,4,opt,name=parentId,proto3" json:"parentId,omitempty"` // id of the parent
 	Parent   *Pipelined_Sporades_Block `protobuf:"bytes,5,opt,name=parent,proto3" json:"parent,omitempty"`     // length of recursion depends on the message type
 	Commands *ReplicaBatch             `protobuf:"bytes,6,opt,name=commands,proto3" json:"commands,omitempty"`
-	Level    int32                     `protobuf:"varint,7,opt,name=level,proto3" json:"level,omitempty"` // for the fallback mode
+	Level    int32                     `protobuf:"varint,7,opt,name=level,proto3" json:"level,omitempty"` // for the fallback level
 }
 
 func (x *Pipelined_Sporades_Block) Reset() {
