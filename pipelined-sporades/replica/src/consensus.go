@@ -249,14 +249,14 @@ func (rp *Replica) handleSporadesConsensus(messageNew *proto.Pipelined_Sporades)
 			if message.Type == 1 {
 				if rp.debugOn {
 					rp.debug("Received a propose message from "+strconv.Itoa(int(message.Sender))+
-						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 1)
 				}
 				output = rp.handleConsensusProposeSync(message)
 
 			} else if message.Type == 2 {
 				if rp.debugOn {
 					rp.debug("Received a vote message from "+strconv.Itoa(int(message.Sender))+
-						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 0)
+						" for view "+strconv.Itoa(int(message.V))+" for round "+strconv.Itoa(int(message.R))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.consensus.startTime)), 1)
 				}
 				output = rp.handleConsensusVoteSync(message)
 
@@ -312,6 +312,10 @@ func (rp *Replica) handleSporadesConsensus(messageNew *proto.Pipelined_Sporades)
 			} else {
 				if rp.debugOn {
 					rp.debug("message "+fmt.Sprintf("%v", message)+" not processed, saved for future", 1)
+					rp.rejectedCount++
+					if rp.rejectedCount >= 100 {
+						panic("somewhere wrong")
+					}
 				}
 			}
 		}
@@ -578,6 +582,7 @@ func (rp *Replica) printLogConsensus() {
 		head = parent
 
 	}
+	count := 0
 
 	for i := 0; i < len(toPrint); i++ {
 		for clientBatchIndex := 0; clientBatchIndex < len(toPrint[i].Commands.Requests); clientBatchIndex++ {
@@ -587,8 +592,11 @@ func (rp *Replica) printLogConsensus() {
 			for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
 				clientRequest := clientBatchCommands[clientRequestIndex].Command
 				_, _ = f.WriteString(toPrint[i].Id + "-" + clientBatchID + "-" + strconv.Itoa(clientRequestIndex) + ":" + clientRequest + "\n")
+				count++
 			}
 		}
 	}
+
+	fmt.Print("Number of committed client requests: " + strconv.Itoa(count))
 
 }

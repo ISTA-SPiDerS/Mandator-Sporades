@@ -11,12 +11,20 @@ import (
 // handler for new view messages
 
 func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporades) bool {
-	if message.V >= rp.consensus.vCurr {
+	if message.V == rp.consensus.vCurr {
 		if !rp.consensus.isAsync {
 			_, ok := rp.consensus.newViewMessages[message.V]
 			if !ok {
 				rp.consensus.newViewMessages[message.V] = make([]*proto.Pipelined_Sporades, 0)
 			}
+
+			if rp.senderInSet(rp.consensus.newViewMessages[message.V], message.Sender) {
+				if rp.debugOn {
+					rp.debug("duplicate messages", 0)
+				}
+				return true // though unsuccessful, we process the message
+			}
+
 			// add the new view to the recieved new view messages
 			rp.consensus.newViewMessages[message.V] = append(rp.consensus.newViewMessages[message.V], message)
 			if rp.debugOn {
@@ -39,7 +47,6 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 						rp.debug("added a new block to store "+fmt.Sprintf("%v", highest_block_high), 0)
 					}
 					rp.consensus.consensusPool.Add(highest_block_high)
-					rp.consensus.vCurr = rp.consensus.blockHigh.V
 					rp.consensus.rCurr = rp.consensus.blockHigh.R
 					if rp.debugOn {
 						rp.debug("updated block_high to "+fmt.Sprintf("%v", rp.consensus.blockHigh), 0)
@@ -60,9 +67,9 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 			return true
 		} else {
 			if rp.debugOn {
-				rp.debug("delayed processing new view message"+fmt.Sprintf("%v", message)+" because i am still in async mode", 1)
+				rp.debug("rejected new view message"+fmt.Sprintf("%v", message)+" because i am already in the async mode", 1)
 			}
-			return false
+			return true
 		}
 	} else {
 		if rp.debugOn {
@@ -380,6 +387,17 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 
 }
 
+// checks if we have a message from the sender in this set
+
+func (rp *Replica) senderInSet(messages []*proto.Pipelined_Sporades, sender int32) bool {
+	for i := 0; i < len(messages); i++ {
+		if messages[i].Sender == sender {
+			return true
+		}
+	}
+	return false
+}
+
 /*
 	Handler for sync consensus vote messages
 */
@@ -394,6 +412,14 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.Pipelined_Sporades) bo
 			if !ok {
 				rp.consensus.voteReplies[key] = make([]*proto.Pipelined_Sporades, 0)
 			}
+
+			if rp.senderInSet(rp.consensus.voteReplies[key], message.Sender) {
+				if rp.debugOn {
+					rp.debug("duplicate messages", 0)
+				}
+				return true // though unsuccessful, we process the message
+			}
+
 			rp.consensus.voteReplies[key] = append(rp.consensus.voteReplies[key], message)
 			//	if for this v,r the array vote replies has n-f blocks
 			votes, _ := rp.consensus.voteReplies[key]

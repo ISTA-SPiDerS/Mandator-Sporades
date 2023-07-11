@@ -1,6 +1,7 @@
 package src
 
 import (
+	"fmt"
 	"pipelined-sporades/common"
 	"pipelined-sporades/proto"
 	"strconv"
@@ -20,6 +21,14 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 			if !ok {
 				rp.consensus.timeoutMessages[message.V] = make([]*proto.Pipelined_Sporades, 0)
 			}
+
+			if rp.senderInSet(rp.consensus.timeoutMessages[message.V], message.Sender) {
+				if rp.debugOn {
+					rp.debug("duplicate messages", 0)
+				}
+				return true // though unsuccessful, we process the message
+			}
+
 			rp.consensus.timeoutMessages[message.V] = append(timeoutMessages, message)
 
 			timeouts, _ := rp.consensus.timeoutMessages[message.V]
@@ -39,11 +48,11 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 				//	Update block high to be the block in the timeout messages with the highest rank and my own block high
 				tempBlockHigh := rp.extractHighestRankedBlockHigh(timeouts)
 				if rp.hasGreaterRank(tempBlockHigh.V, tempBlockHigh.R, rp.consensus.blockHigh.V, rp.consensus.blockHigh.R) {
-					rp.consensus.blockHigh = tempBlockHigh
 					//	set vCur, rCur to v, max(r cur , block high .r)
-					rp.consensus.vCurr = rp.consensus.blockHigh.V
+					rp.consensus.blockHigh = tempBlockHigh
 					rp.consensus.rCurr = rp.consensus.blockHigh.R
 				}
+				rp.consensus.vCurr = message.V
 
 				var batches []*proto.ClientBatch
 				if len(rp.incomingRequests) <= rp.replicaBatchSize {
@@ -204,6 +213,7 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 								Id:       strconv.Itoa(int(rp.name)) + "." + strconv.Itoa(int(rp.consensus.vCurr)) + "." + strconv.Itoa(int(level1Block.R+1)) + "." + "f" + "." + strconv.Itoa(int(2)),
 								V:        rp.consensus.vCurr,
 								R:        level1Block.R + 1,
+								ParentId: level1Block.Id,
 								Parent:   level1Block,
 								Commands: &commands,
 								Level:    2,
@@ -249,7 +259,7 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 		} else {
 			// given that there is level 1 fallback block, eventually i should also get it, so save this incoming message to process later
 			if rp.debugOn {
-				rp.debug("Sent an internal fallback propose level 1/2 block because I still haven't received n-f timeouts ", 1)
+				rp.debug("Sent an internal fallback propose level 1/2 block because I still haven't received n-f timeouts, my rank is "+fmt.Sprintf("v: %v, r:%v and the message rank is v:%v, r:%v", rp.consensus.vCurr, rp.consensus.rCurr, message.V, message.R), 1)
 			}
 			return false
 		}

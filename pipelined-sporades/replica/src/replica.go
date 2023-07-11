@@ -64,6 +64,8 @@ type Replica struct {
 
 	finished       bool // to finish consensus
 	asyncbatchTime int
+
+	rejectedCount int // number of messages rejected because self is still not updated to a rank
 }
 
 const incomingBufferSize = 1000000 // the size of the buffer which receives all the incoming messages
@@ -115,6 +117,7 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		pipelineLength:   pipelineLength,
 		finished:         false,
 		asyncbatchTime:   asyncbatchTime,
+		rejectedCount:    0,
 	}
 
 	// initialize clientAddrList

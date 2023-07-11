@@ -37,6 +37,8 @@ type AsyncConsensus struct {
 	lastCommittedTime time.Time      // time when the last consensus block was committed
 }
 
+// //todo check if voteReplies timeoutMessages contain duplicates before adding new items
+
 /*
 	Init Async Consensus Data Structs
 */

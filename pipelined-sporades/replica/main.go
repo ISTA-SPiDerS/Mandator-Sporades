@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	_ "net/http/pprof"
 	"os"
 	"pipelined-sporades/configuration"
 	"pipelined-sporades/replica/src"

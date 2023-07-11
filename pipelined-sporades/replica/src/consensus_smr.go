@@ -5,6 +5,7 @@ import (
 	"pipelined-sporades/common"
 	"pipelined-sporades/proto"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -46,6 +47,9 @@ func (rp *Replica) updateSMR() {
 		if parent_id == "genesis-block" {
 			break
 		}
+		if len(strings.Trim(parent_id, " ")) == 0 {
+			panic("empty parent id found in the block " + head.Id)
+		}
 		//	if parent_id is in the consensus pool
 		headBlock, ok := rp.consensus.consensusPool.Get(parent_id)
 		if ok {
@@ -85,7 +89,7 @@ func (rp *Replica) updateSMR() {
 			for b := 0; b < len(responses); b++ {
 				senders = append(senders, responses[b].Sender)
 			}
-			rp.debug("Committed block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime))+" with "+strconv.Itoa(len(clientBatches))+" client batches from "+fmt.Sprintf("%v", senders), 1)
+			rp.debug("Committed block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime))+" with "+strconv.Itoa(len(clientBatches))+" client batches from "+fmt.Sprintf("%v", senders), 12)
 		}
 		rp.consensus.lastCommittedBlock = nextBlockToCommit
 		rp.decrementPipelined()
