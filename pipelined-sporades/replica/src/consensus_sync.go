@@ -72,6 +72,9 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 			}
 			return true
 		}
+	} else if message.V > rp.consensus.vCurr {
+		return false
+
 	} else {
 		if rp.debugOn {
 			rp.debug("received a new view for an older view, hence rejected ", 1)
@@ -238,7 +241,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 		return // i am not the leader
 	}
 
-	if rp.consensus.pipelinedRequests >= rp.pipelineLength {
+	if rp.consensus.pipelinedRequests > rp.pipelineLength {
 		if rp.debugOn {
 			rp.debug("did not propose because pipeline length full with outstanding proposals "+strconv.Itoa(rp.consensus.pipelinedRequests), 1)
 		}
