@@ -109,7 +109,7 @@ func (cl *Client) computeStats() {
 }
 
 /*
-	Converts int64[] to float64[]
+	converts int64[] to float64[]
 */
 
 func (cl *Client) getFloat64List(list []int64) []float64 {

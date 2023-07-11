@@ -165,7 +165,7 @@ func (cl *Client) Run() {
 			case cl.messageCodes.StatusRPC:
 				clientStatusResponse := replicaMessage.Obj.(*proto.Status)
 				if cl.debugOn {
-					cl.debug("Client status "+fmt.Sprintf("%#v", clientStatusResponse), 0)
+					cl.debug("Client status from "+fmt.Sprintf("%#v", clientStatusResponse.Sender), 0)
 				}
 				cl.handleClientStatusResponse(clientStatusResponse)
 				break

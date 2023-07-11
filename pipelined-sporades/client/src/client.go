@@ -108,7 +108,6 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clie
 		OperationType:       operationType,
 		sentRequests:        make([][]requestBatch, numRequestGenerationThreads),
 		receivedResponses:   make(map[string]requestBatch),
-		startTime:           time.Time{},
 		clientListenAddress: common.GetAddress(cfg.Clients, name),
 		keyLen:              keyLen,
 		valueLen:            valLen,
@@ -135,8 +134,9 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clie
 	cl.RegisterRPC(new(proto.ClientBatch), cl.messageCodes.ClientBatchRpc)
 	cl.RegisterRPC(new(proto.Status), cl.messageCodes.StatusRPC)
 
-	cl.debug("Registered RPCs in the table", 0)
-
+	if cl.debugOn {
+		cl.debug("Registered RPCs in the table", 0)
+	}
 	// Set random seed
 	rand.Seed(time.Now().UTC().UnixNano())
 
