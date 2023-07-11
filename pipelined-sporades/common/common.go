@@ -1,8 +1,6 @@
 package common
 
 import (
-	"bytes"
-	"encoding/gob"
 	"pipelined-sporades/configuration"
 	"pipelined-sporades/proto"
 	"strconv"
@@ -83,7 +81,7 @@ func (t *TimerWithCancel) Start() {
 	Set a function to call when timeout
 */
 
-func (t *TimerWithCancel) SetTimeoutFuntion(f func()) {
+func (t *TimerWithCancel) SetTimeoutFunction(f func()) {
 	t.f = f
 }
 
@@ -99,16 +97,4 @@ func (t *TimerWithCancel) Cancel() {
 		break
 	}
 
-}
-
-/*
-	util function to get the size of a message
-*/
-
-func GetRealSizeOf(v interface{}) (int, error) {
-	b := new(bytes.Buffer)
-	if err := gob.NewEncoder(b).Encode(v); err != nil {
-		return 0, err
-	}
-	return b.Len(), nil
 }
