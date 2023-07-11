@@ -48,7 +48,7 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 			// a dummy client request generator to avoid view timeouts due to absense of client requests
 			go func() {
 				for true {
-					time.Sleep(time.Duration(rp.viewTimeout/5) * time.Microsecond)
+					time.Sleep(time.Duration(rp.viewTimeout/3) * time.Microsecond)
 					dummyClientBatch := proto.ClientBatch{
 						UniqueId: "dummy",
 						Requests: make([]*proto.SingleOperation, 0),
@@ -66,7 +66,6 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 		}
 
 	}
-	//rp.debug("Sending status reply ", 0)
 
 	statusMessage := proto.Status{
 		Type: message.Type,

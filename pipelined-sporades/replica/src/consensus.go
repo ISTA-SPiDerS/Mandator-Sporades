@@ -42,7 +42,7 @@ type SporadesConsensus struct {
 
 	pipelinedRequests int
 
-	sentFirstProposal map[int32]bool
+	sentFirstProposal map[int32]bool // did we send the first proposal upon starting a new view
 }
 
 // increment pipelinedRequests
@@ -183,7 +183,7 @@ func (rp *Replica) setViewTimer() {
 	rp.consensus.viewTimer = common.NewTimerWithCancel(time.Duration(rp.viewTimeout) * time.Microsecond)
 	vCurr := rp.consensus.vCurr
 	rCurr := rp.consensus.rCurr
-	rp.consensus.viewTimer.SetTimeoutFuntion(func() {
+	rp.consensus.viewTimer.SetTimeoutFunction(func() {
 		// this function runs in a separate thread, hence we do not send timeout message in this function, instead send a timeout-internal signal
 		internalTimeoutNotification := proto.Pipelined_Sporades{
 			Sender:      rp.name,
@@ -313,8 +313,8 @@ func (rp *Replica) handleSporadesConsensus(messageNew *proto.Pipelined_Sporades)
 				if rp.debugOn {
 					rp.debug("message "+fmt.Sprintf("%v", message)+" not processed, saved for future", 1)
 					rp.rejectedCount++
-					if rp.rejectedCount >= 100 {
-						panic("somewhere wrong")
+					if rp.rejectedCount >= 10000 {
+						rp.debug("somewhere wrong", 0)
 					}
 				}
 			}
