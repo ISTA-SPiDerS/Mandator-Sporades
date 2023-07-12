@@ -160,5 +160,13 @@ func (rp *Replica) getReplicaName(replicaIndex int) int32 {
 */
 
 func (rp *Replica) updateApplicationLogic(miniBlock *proto.MemPoolMini) *proto.MemPoolMini {
-	return rp.state.Execute(miniBlock)
+	return &proto.MemPoolMini{
+		Sender:   rp.name,
+		Receiver: miniBlock.Creator,
+		UniqueId: miniBlock.UniqueId,
+		Type:     8,
+		Note:     miniBlock.Note,
+		Commands: nil,
+		Creator:  miniBlock.Creator,
+	}
 }

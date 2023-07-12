@@ -1,5 +1,3 @@
-This branch implements the workers with execution: workers distribute mini-mandator-blocks, and the replicas execute each command
-
 This repo implements an asynchronous consensus protocol and a mem-pool.
 
 Our protocol uses the [Mage](https://magefile.org/) build tool. Therefore it needs the ```mage``` command to be installed.

@@ -3,6 +3,7 @@ arrivalRate=$1
 algo=$2
 asyncBatchTime=$3
 attackTime=$4
+viewTimeout=$5
 
 mage generate && mage build
 
@@ -20,9 +21,9 @@ pkill child; pkill child; pkill child; pkill child; pkill child; pkill child
 
 echo "Killed previously running instances"
 
-nohup ./${replica_path} --name 1 --consAlgo "${algo}"  --window 1000   --debugOn --debugLevel 4  --asyncBatchTime "${asyncBatchTime}" >${output_path}1.log &
-nohup ./${replica_path} --name 2 --consAlgo "${algo}"  --window 1000   --debugOn --debugLevel 4  --asyncBatchTime "${asyncBatchTime}" >${output_path}2.log &
-nohup ./${replica_path} --name 3 --consAlgo "${algo}"  --window 1000  --debugOn --debugLevel 4  --asyncBatchTime "${asyncBatchTime}" >${output_path}3.log &
+nohup ./${replica_path} --name 1 --consAlgo "${algo}"  --window 1000   --debugOn  --debugLevel 4  --asyncBatchTime "${asyncBatchTime}" --viewTimeout "${viewTimeout}" >${output_path}1.log &
+nohup ./${replica_path} --name 2 --consAlgo "${algo}"  --window 1000   --debugOn  --debugLevel 4  --asyncBatchTime "${asyncBatchTime}" --viewTimeout "${viewTimeout}" >${output_path}2.log &
+nohup ./${replica_path} --name 3 --consAlgo "${algo}"  --window 1000   --debugOn  --debugLevel 4  --asyncBatchTime "${asyncBatchTime}" --viewTimeout "${viewTimeout}" >${output_path}3.log &
 
 echo "Started 3 replicas"
 
@@ -76,6 +77,9 @@ pkill client; pkill client; pkill client
 python3 experiments/python/overlay-test.py logs/1-mem-pool.txt  logs/2-mem-pool.txt  logs/3-mem-pool.txt  > ${output_path}python-mem-pool.log
 python3 experiments/python/overlay-test.py logs/1-consensus.txt logs/2-consensus.txt logs/3-consensus.txt > ${output_path}python-consensus.log
 
+dst_directory="/home/pasindu/Desktop/Test/re_async/${arrivalRate}/${algo}/${asyncBatchTime}/${attackTime}/${viewTimeout}/"
+mkdir -p "${dst_directory}"
+cp -r ${output_path} "${dst_directory}"
 
 echo "Killed instances"
 

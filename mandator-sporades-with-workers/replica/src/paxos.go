@@ -253,6 +253,9 @@ func (rp *Replica) printPaxosLogConsensus() {
 
 	for i := int32(1); i <= rp.paxosConsensus.lastCommittedLogIndex; i++ {
 		nextBlockToCommit := rp.paxosConsensus.replicatedLog[i]
+		if nextBlockToCommit.decided == false {
+			break
+		}
 		nextMemBlockLogPositionsToCommit := nextBlockToCommit.decisions
 
 		// for each log position in nextMemBlockLogPositionsToCommit that corresponds to different replicas, check if the index is --
@@ -265,22 +268,15 @@ func (rp *Replica) printPaxosLogConsensus() {
 
 				for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
 					memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
+					_, _ = f.WriteString(strconv.Itoa(int(i)) + "-" + memPoolName + ":")
 					memBlock, _ := rp.memPool.blockMap.Get(memPoolName)
 					miniBlockIDs := memBlock.Minimemblocks
 					for l := 0; l < len(miniBlockIDs); l++ {
 						miniBlockID := miniBlockIDs[l].UniqueId
-						miniBlock, _ := rp.memPool.miniMap.Get(miniBlockID)
-						clientBatches := miniBlock.Commands
-						for clientBatchIndex := 0; clientBatchIndex < len(clientBatches); clientBatchIndex++ {
-							clientBatch := clientBatches[clientBatchIndex]
-							clientBatchID := clientBatch.Id
-							clientBatchCommands := clientBatch.Commands
-							for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
-								clientRequestID := clientBatchCommands[clientRequestIndex].UniqueId
-								_, _ = f.WriteString(strconv.Itoa(int(i)) + "-" + memPoolName + "-" + miniBlockID + "-" + clientBatchID + ":" + clientRequestID + "\n")
-							}
-						}
+						_, _ = rp.memPool.miniMap.Get(miniBlockID)
+						_, _ = f.WriteString(miniBlockID + ",")
 					}
+					_, _ = f.WriteString("\n")
 				}
 				lastCommittedMemPoolIndexes[j] = lastMemPoolCounter
 			}

@@ -144,23 +144,17 @@ func (rp *Replica) printLogConsensus() {
 
 				for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
 					memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
+					_, _ = f.WriteString(nextBlockToCommit.Id + "-" + memPoolName + ":")
 					memBlock, _ := rp.memPool.blockMap.Get(memPoolName)
 					miniBlockIDs := memBlock.Minimemblocks
 					for l := 0; l < len(miniBlockIDs); l++ {
 						miniBlockID := miniBlockIDs[l].UniqueId
-						miniBlock, _ := rp.memPool.miniMap.Get(miniBlockID)
-						clientBatches := miniBlock.Commands
-						for clientBatchIndex := 0; clientBatchIndex < len(clientBatches); clientBatchIndex++ {
-							clientBatch := clientBatches[clientBatchIndex]
-							clientBatchID := clientBatch.Id
-							clientBatchCommands := clientBatch.Commands
-							for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
-								clientRequestID := clientBatchCommands[clientRequestIndex].UniqueId
-								_, _ = f.WriteString(nextBlockToCommit.Id + "-" + memPoolName + "-" + miniBlockID + "-" + clientBatchID + "-" + clientRequestID + ":" + clientBatchCommands[clientRequestIndex].Command + "\n")
-							}
-						}
+						_, _ = rp.memPool.miniMap.Get(miniBlockID)
+						_, _ = f.WriteString(miniBlockID + ",")
 					}
+					_, _ = f.WriteString("\n")
 				}
+
 				lastCommittedMemPoolIndexes[j] = lastMemPoolCounter
 			}
 		}
@@ -180,21 +174,14 @@ func (rp *Replica) printLogMemPool() {
 	defer f.Close()
 
 	for memBlockID, memBlock := range rp.memPool.blockMap.MessageBlocks {
+		_, _ = f.WriteString(memBlockID + ":")
 		miniBlocks := memBlock.MessageBlock.Minimemblocks
 		for miniBlockIndex := 0; miniBlockIndex < len(miniBlocks); miniBlockIndex++ {
 			miniBlockId := miniBlocks[miniBlockIndex].UniqueId
-			miniBlock, _ := rp.memPool.miniMap.Get(miniBlockId)
-			clientBatches := miniBlock.Commands
-			for clientBatchIndex := 0; clientBatchIndex < len(clientBatches); clientBatchIndex++ {
-				clientBatch := clientBatches[clientBatchIndex]
-				clientBatchID := clientBatch.Id
-				clientBatchCommands := clientBatch.Commands
-				for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
-					clientRequestID := clientBatchCommands[clientRequestIndex].UniqueId
-					_, _ = f.WriteString(memBlockID + "-" + miniBlockId + "-" + clientBatchID + "-" + clientRequestID + ":" + clientBatchCommands[clientRequestIndex].Command + "\n")
-				}
-			}
+			_, _ = rp.memPool.miniMap.Get(miniBlockId)
+			_, _ = f.WriteString(miniBlockId + ",")
 		}
+		_, _ = f.WriteString("\n")
 	}
 
 }

@@ -1,7 +1,6 @@
 package src
 
 import (
-	"async-consensus/benchmark"
 	"async-consensus/common"
 	"async-consensus/configuration"
 	"async-consensus/proto"
@@ -68,8 +67,7 @@ type Replica struct {
 
 	consAlgo string // async/paxos
 
-	benchmarkMode int                  // 0 for resident K/V store, 1 for redis
-	state         *benchmark.Benchmark // k/v store
+	benchmarkMode int // 0 for resident K/V store, 1 for redis
 }
 
 const numOutgoingThreads = 100       // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path todo this number should be tuned
@@ -121,7 +119,6 @@ func New(name int32, cfg *configuration.InstanceConfig, workerAssignment map[int
 		asyncBatchTime:      asyncBatchTime,
 		consAlgo:            consAlgo,
 		benchmarkMode:       benchmarkMode,
-		state:               benchmark.Init(benchmarkMode, name, keyLen, valLen),
 	}
 
 	// init mem pool and consensus pools

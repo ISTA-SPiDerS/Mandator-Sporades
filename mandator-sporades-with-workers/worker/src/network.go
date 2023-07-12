@@ -180,13 +180,6 @@ func (wr *Worker) Run() {
 			common.Debug("MemPoolMini message from "+fmt.Sprintf("%#v", memPoolMiniMessage.Sender), 0, wr.debugLevel, wr.debugOn)
 			wr.handleMemPoolMini(memPoolMiniMessage)
 			break
-
-		case wr.messageCodes.MemPoolRPC:
-			memPoolMessage := replicaMessage.Obj.(*proto.MemPool)
-			common.Debug("Mem pool message from "+fmt.Sprintf("%#v", memPoolMessage.Sender), 0, wr.debugLevel, wr.debugOn)
-			wr.handleMemPool(memPoolMessage)
-			break
-
 		}
 	}
 

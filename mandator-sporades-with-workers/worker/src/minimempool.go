@@ -252,7 +252,7 @@ func (wr *Worker) handleMemPoolMini(message *proto.MemPoolMini) {
 			UniqueId: message.UniqueId,
 			Type:     3,
 			Note:     message.Note,
-			Commands: message.Commands,
+			Commands: nil,
 			Creator:  message.Creator,
 		}
 
@@ -283,7 +283,7 @@ func (wr *Worker) handleMemPoolMini(message *proto.MemPoolMini) {
 						UniqueId: miniBlock.UniqueId,
 						Type:     7,
 						Note:     miniBlock.Note,
-						Commands: miniBlock.Commands,
+						Commands: nil,
 						Creator:  miniBlock.Creator,
 					}
 
@@ -304,12 +304,14 @@ func (wr *Worker) handleMemPoolMini(message *proto.MemPoolMini) {
 
 	} else if message.Type == 4 {
 		//    Mem-Pool-Mini-Mem-Block-Internal-Send-Ack 4
-		//	  delete the message from the mini mempool
-		wr.miniPool.miniMap.Remove(message.UniqueId)
-		common.Debug("Removed mini batch from local store because I got an ack from replica, the id is "+message.UniqueId, 0, wr.debugLevel, wr.debugOn)
 
 	} else if message.Type == 8 {
 		//  Mem-Pool-Mini-Mem-Block-Client-Response 8
+		miniBlock, ok := wr.miniPool.miniMap.Get(message.UniqueId)
+		if !ok {
+			panic("should not happen")
+		}
+		message.Commands = miniBlock.Commands
 		//  for each batch of requests, find the originating client, and send the ClientBatch
 		for i := 0; i < len(message.Commands); i++ {
 			// message.Commands[i] is a batch of client responses
@@ -340,14 +342,4 @@ func (wr *Worker) handleMemPoolMini(message *proto.MemPoolMini) {
 		}
 	}
 
-}
-
-/*
-	Handler for MemPool messages
-*/
-
-func (wr *Worker) handleMemPool(message *proto.MemPool) {
-	/*
-		For the moment, the worker doesn't recieve any memPool message
-	*/
 }
