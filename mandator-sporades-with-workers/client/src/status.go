@@ -2,10 +2,10 @@ package src
 
 import (
 	"fmt"
-	"pipelined-sporades/common"
-	"pipelined-sporades/proto"
 	"strconv"
 	"time"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*

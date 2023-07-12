@@ -1,9 +1,9 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
+	"mandator-sporades/common"
+	"mandator-sporades/proto"
 )
 
 /*

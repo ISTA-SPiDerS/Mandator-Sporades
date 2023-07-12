@@ -1,8 +1,8 @@
 package src
 
 import (
-	"async-consensus/common"
 	"fmt"
+	"mandator-sporades/common"
 	"strconv"
 	"time"
 )

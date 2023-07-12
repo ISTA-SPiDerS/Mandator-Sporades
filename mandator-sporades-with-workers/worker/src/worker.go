@@ -1,9 +1,6 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/configuration"
-	"async-consensus/proto"
 	"bufio"
 	"fmt"
 	"math/rand"
@@ -11,6 +8,9 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"with-workers/common"
+	"with-workers/configuration"
+	"with-workers/proto"
 )
 
 /*

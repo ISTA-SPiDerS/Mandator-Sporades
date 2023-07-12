@@ -1,14 +1,14 @@
 package common
 
 import (
-	"async-consensus/configuration"
-	"async-consensus/proto"
 	"bytes"
 	"encoding/gob"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+	"with-workers/configuration"
+	"with-workers/proto"
 )
 
 /*

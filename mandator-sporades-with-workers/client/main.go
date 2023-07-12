@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"pipelined-sporades/client/src"
-	"pipelined-sporades/configuration"
 	"time"
+	"with-workers/client/src"
+	"with-workers/configuration"
 )
 
 func main() {

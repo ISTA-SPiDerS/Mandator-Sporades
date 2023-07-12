@@ -1,11 +1,11 @@
 package main
 
 import (
-	"async-consensus/configuration"
-	"async-consensus/replica/src"
 	"flag"
 	"fmt"
 	"os"
+	"with-workers/configuration"
+	"with-workers/replica/src"
 )
 
 func main() {

@@ -1,11 +1,11 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"encoding/json"
 	"fmt"
 	"log"
+	"mandator-sporades/common"
+	"mandator-sporades/proto"
 	"math/rand"
 	"os"
 	"strconv"

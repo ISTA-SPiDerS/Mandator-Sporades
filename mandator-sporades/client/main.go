@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"pipelined-sporades/client/src"
-	"pipelined-sporades/configuration"
+	"mandator-sporades/client/src"
+	"mandator-sporades/configuration"
 	"time"
 )
 

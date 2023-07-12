@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"pipelined-sporades/common"
-	"pipelined-sporades/configuration"
-	"pipelined-sporades/proto"
 	"strconv"
 	"sync"
 	"time"
+	"with-workers/common"
+	"with-workers/configuration"
+	"with-workers/proto"
 )
 
 /*

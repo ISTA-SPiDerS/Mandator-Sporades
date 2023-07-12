@@ -1,10 +1,10 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
 	"log"
+	"mandator-sporades/common"
+	"mandator-sporades/proto"
 	"os"
 	"strconv"
 	"time"

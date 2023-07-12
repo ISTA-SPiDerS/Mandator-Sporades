@@ -1,11 +1,11 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/configuration"
-	"async-consensus/proto"
 	"bufio"
 	"fmt"
+	"mandator-sporades/common"
+	"mandator-sporades/configuration"
+	"mandator-sporades/proto"
 	"os"
 	"strconv"
 	"sync"

@@ -3,8 +3,8 @@ package src
 import (
 	"fmt"
 	"github.com/montanaflynn/stats"
+	"mandator-sporades/proto"
 	"os"
-	"pipelined-sporades/proto"
 	"strconv"
 )
 

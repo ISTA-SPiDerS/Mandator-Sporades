@@ -1,9 +1,9 @@
 package src
 
 import (
-	"async-consensus/proto"
 	"context"
 	"github.com/go-redis/redis/v8"
+	"mandator-sporades/proto"
 )
 
 /*

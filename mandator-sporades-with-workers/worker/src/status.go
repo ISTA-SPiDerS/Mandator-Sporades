@@ -1,11 +1,11 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
 	"strconv"
 	"time"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 func (wr *Worker) handleStatus(message *proto.Status) {

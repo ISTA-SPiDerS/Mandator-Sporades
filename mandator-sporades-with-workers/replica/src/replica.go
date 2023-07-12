@@ -1,15 +1,15 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/configuration"
-	"async-consensus/proto"
 	"bufio"
 	"fmt"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+	"with-workers/common"
+	"with-workers/configuration"
+	"with-workers/proto"
 )
 
 /*

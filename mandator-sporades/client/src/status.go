@@ -2,8 +2,8 @@ package src
 
 import (
 	"fmt"
-	"pipelined-sporades/common"
-	"pipelined-sporades/proto"
+	"mandator-sporades/common"
+	"mandator-sporades/proto"
 	"strconv"
 	"time"
 )

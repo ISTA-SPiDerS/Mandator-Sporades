@@ -1,4 +1,4 @@
-module async-consensus
+module with-workers
 
 go 1.17
 

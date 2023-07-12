@@ -1,11 +1,11 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"math/rand"
 	"strconv"
 	"time"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /* this file contains all the worker related logic */

@@ -1,11 +1,11 @@
 package common
 
 import (
-	"async-consensus/configuration"
-	"async-consensus/proto"
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"mandator-sporades/configuration"
+	"mandator-sporades/proto"
 	"strconv"
 	"strings"
 	"time"

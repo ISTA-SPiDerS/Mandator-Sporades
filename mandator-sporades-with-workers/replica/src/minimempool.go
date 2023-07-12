@@ -1,9 +1,9 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"strconv"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*

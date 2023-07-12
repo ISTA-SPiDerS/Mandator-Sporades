@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"pipelined-sporades/common"
-	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 	"unsafe"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*

@@ -1,14 +1,14 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"bufio"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
 	"strconv"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*

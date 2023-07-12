@@ -1,10 +1,10 @@
 package main
 
 import (
-	"async-consensus/configuration"
-	"async-consensus/replica/src"
 	"flag"
 	"fmt"
+	"mandator-sporades/configuration"
+	"mandator-sporades/replica/src"
 	"os"
 )
 

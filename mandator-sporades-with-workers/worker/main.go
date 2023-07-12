@@ -1,11 +1,11 @@
 package main
 
 import (
-	"async-consensus/configuration"
-	"async-consensus/worker/src"
 	"flag"
 	"fmt"
 	"os"
+	"with-workers/configuration"
+	"with-workers/worker/src"
 )
 
 func main() {

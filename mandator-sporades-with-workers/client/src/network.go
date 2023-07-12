@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"pipelined-sporades/common"
-	"pipelined-sporades/proto"
 	"strconv"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*

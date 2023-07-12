@@ -2,10 +2,10 @@ package src
 
 import (
 	"fmt"
+	"mandator-sporades/common"
+	"mandator-sporades/proto"
 	"math"
 	"math/rand"
-	"pipelined-sporades/common"
-	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 	"unsafe"

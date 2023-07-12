@@ -1,12 +1,12 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"bufio"
 	"encoding/binary"
 	"fmt"
 	"io"
+	"mandator-sporades/common"
+	"mandator-sporades/proto"
 	"net"
 	"strconv"
 	"time"

@@ -1,12 +1,12 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*

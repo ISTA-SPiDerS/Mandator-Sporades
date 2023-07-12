@@ -1,7 +1,7 @@
 package common
 
 import (
-	"async-consensus/proto"
+	"with-workers/proto"
 )
 
 /*

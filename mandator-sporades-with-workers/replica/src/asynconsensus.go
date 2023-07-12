@@ -1,13 +1,13 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*

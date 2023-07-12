@@ -1,8 +1,6 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"bufio"
 	"encoding/binary"
 	"fmt"
@@ -10,6 +8,8 @@ import (
 	"net"
 	"strconv"
 	"time"
+	"with-workers/common"
+	"with-workers/proto"
 )
 
 /*
