@@ -184,7 +184,7 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 
 					// save the level 2 block in b_fall
 
-					key := strconv.Itoa(int(message.V)) + "." + strconv.Itoa(int(message.BlockNew.Level))
+					key := strconv.Itoa(int(message.BlockNew.V)) + "." + strconv.Itoa(int(message.BlockNew.Level))
 					_, ok := rp.consensus.bFall[key]
 					if !ok {
 						rp.consensus.bFall[key] = make([]string, 0)
@@ -302,10 +302,22 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 		if !ok {
 			panic("Key " + key + " is not found in the block store, which is a fallback block. Triggering this error after receiving an async-vote")
 		}
-		rp.consensus.consensusPool.AddAck(key, message.Sender)
 
-		//	if there are n-f async votes for the block that I proposed
 		acks := rp.consensus.consensusPool.GetAcks(key)
+		found := false
+		for a := 0; a < len(acks); a++ {
+			if acks[a] == message.Sender {
+				found = true
+				break
+			}
+		}
+		if !found {
+			rp.consensus.consensusPool.AddAck(key, message.Sender)
+		} else {
+			return true
+		}
+		//	if there are n-f async votes for the block that I proposed
+		acks = rp.consensus.consensusPool.GetAcks(key)
 		if len(acks) == rp.numReplicas/2+1 {
 
 			if message.BlockNew.Level == 1 && !rp.consensus.sentLevel2Block[rp.consensus.vCurr] {
@@ -448,7 +460,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 
 				leaderNode := rp.consensus.randomness[rp.consensus.vCurr] // l is the async leader of this view
 				if rp.debugOn {
-					rp.debug("Possible leader node for the view "+strconv.Itoa(int(rp.consensus.vCurr))+" is "+strconv.Itoa(int(leaderNode)), 1)
+					rp.debug("Possible leader node for the view "+strconv.Itoa(int(rp.consensus.vCurr))+" is "+strconv.Itoa(leaderNode), 1)
 				}
 				// if height 2 block by leader exists in the first n-f height 2 blocks received in the fallback messages
 				height2ConfirmedLeaderBlockExists := false
@@ -464,7 +476,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 				if height2ConfirmedLeaderBlockExists {
 					//	Set block high, block commit to height 2 block from l
 					rp.consensus.blockHigh = height2ConfirmedLeaderBlock
-
+					rp.consensus.rCurr = rp.consensus.blockHigh.R
 					if rp.hasGreaterRank(height2ConfirmedLeaderBlock.V, height2ConfirmedLeaderBlock.R, rp.consensus.blockCommit.V, rp.consensus.blockCommit.R) &&
 						rp.hasGreaterRank(height2ConfirmedLeaderBlock.V, height2ConfirmedLeaderBlock.R, rp.consensus.lastCommittedBlock.V, rp.consensus.lastCommittedBlock.R) {
 						rp.consensus.blockCommit = height2ConfirmedLeaderBlock
@@ -474,8 +486,8 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 						rp.debug("Updated block commit in the async path for block "+rp.consensus.blockCommit.Id, 1)
 					}
 					//	Set v cur , r cur to rank(block high)
-					rp.consensus.vCurr = rp.consensus.blockHigh.V
-					rp.consensus.rCurr = rp.consensus.blockHigh.R
+					rp.consensus.vCurr = message.V
+
 				} else {
 					if rp.debugOn {
 						rp.debug("Leader node level 2 confirmed proposal does not exist for the view "+strconv.Itoa(int(rp.consensus.vCurr)), 1)
@@ -495,11 +507,9 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 							}
 						}
 						if height2LeaderBlockExists {
-							//	Set block high to height2LeaderBlock
 							rp.consensus.blockHigh = height2LeaderBlock
-							//	Set v cur , r cur to rank(block high)
-							rp.consensus.vCurr = rp.consensus.blockHigh.V
 							rp.consensus.rCurr = rp.consensus.blockHigh.R
+							rp.consensus.vCurr = message.V
 							if rp.debugOn {
 								rp.debug("Updated block high (not committed) in the async path for block "+rp.consensus.blockHigh.Id, 1)
 							}
