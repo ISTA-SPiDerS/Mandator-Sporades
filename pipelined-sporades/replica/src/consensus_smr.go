@@ -140,7 +140,7 @@ func (rp *Replica) updateApplicationLogic(commands []*proto.ClientBatch) []*prot
 }
 
 /*
-	send back the responses to client
+	send the responses to client
 */
 
 func (rp *Replica) sendClientResponses(commands []*proto.ClientBatch) {
