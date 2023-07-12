@@ -1,4 +1,4 @@
-package benchmark
+package src
 
 import (
 	"async-consensus/proto"
