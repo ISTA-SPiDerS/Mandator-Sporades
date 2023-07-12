@@ -22,7 +22,7 @@ func main() {
 	valLen := flag.Int("valLen", 8, "value length")
 	benchmarkMode := flag.Int("benchmarkMode", 0, "0: resident store, 1: redis")
 	pipelineLength := flag.Int("pipelineLength", 1, "pipeline length")
-	networkbatchTime := flag.Int("networkbatchTime", 10, "artifical delay for sporades messages in ms")
+	networkbatchTime := flag.Int("networkbatchTime", 10, "artificial delay for sporades messages in ms")
 	asyncSimTimeout := flag.Int("asyncSimTimeout", 10, "artificial delay in ms to simulate asynchrony")
 
 	flag.Parse()
