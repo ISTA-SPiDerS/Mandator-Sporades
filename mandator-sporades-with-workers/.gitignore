@@ -1,7 +1,0 @@
-/client/bin
-/worker/bin
-/replica/bin
-
-/logs
-/.git
-/.idea
