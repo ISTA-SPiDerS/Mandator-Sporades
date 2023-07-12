@@ -1,51 +1,59 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
 	"math"
 	"math/rand"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 	"unsafe"
 )
 
 /*
-	Upon receiving a client response, add the request to the received requests map
+	Upon receiving a client response, add the request to the received requests map, unless already received before
 */
 
 func (cl *Client) handleClientResponseBatch(batch *proto.ClientBatch) {
+	if cl.finished {
+		return
+	}
+
+	_, ok := cl.receivedResponses[batch.UniqueId]
+	if ok {
+		return
+	}
+
 	cl.receivedResponses[batch.UniqueId] = requestBatch{
 		batch: *batch,
 		time:  time.Now(), // record the time when the response was received
 	}
-	workerIndex := cl.workerArrayIndex[batch.Sender]
-	cl.lastSeenTimeMutexes[workerIndex].Lock()
-	cl.lastSeenTimes[workerIndex] = time.Now() // mark the last time a response was received
-	cl.lastSeenTimeMutexes[workerIndex].Unlock()
-	common.Debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received array", 0, cl.debugLevel, cl.debugOn)
-	common.Debug("Response Batch contains "+fmt.Sprintf("%v", batch.Requests), 0, cl.debugLevel, cl.debugOn)
+	cl.receivedNumMutex.Lock()
+	cl.numReceivedBatches++
+	cl.receivedNumMutex.Unlock()
+	if cl.debugOn {
+		cl.debug("Added response Batch with id "+batch.UniqueId, 0)
+	}
 }
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
-	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to the default worker, and write batch to the correct array in sentRequests
-	start failure detector that checks the time since the last response was received, and update the default worker -- currently disabled
+	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to all replicas, and write batch to the correct array in sentRequests
 	start the scheduler that schedules new requests
-	the thread sleeps for test duration and then starts processing the responses. This is to handle inflight responses after the test duration
+	the thread sleeps for a duration and then starts processing the responses. This is to handle inflight responses after the test duration
 */
 
 func (cl *Client) SendRequests() {
 	cl.generateArrivalTimes()
 	cl.startRequestGenerators()
-	//cl.startFailureDetector()
 	cl.startScheduler() // this is sync, main thread waits for this to finish
 
 	// end of test
 
-	time.Sleep(time.Duration(cl.testDuration*5) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
+	time.Sleep(time.Duration(10) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
 	fmt.Printf("Finish sending requests \n")
+	cl.finished = true
 	cl.computeStats()
 }
 
@@ -59,40 +67,62 @@ func (cl *Client) startRequestGenerators() {
 			localCounter := 0
 			lastSent := time.Now() // used to get how long to wait
 			for true {             // this runs forever
+				if cl.finished {
+					return
+				}
 				numRequests := 0
-				var requests []*proto.ClientBatch_SingleOperation
+				var requests []*proto.SingleOperation
 				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
 				for !(numRequests >= cl.clientBatchSize || (time.Now().Sub(lastSent).Microseconds() > int64(cl.clientBatchTime) && numRequests > 0)) {
 					_ = <-cl.arrivalChan // keep collecting new requests arrivals
-					requests = append(requests, &proto.ClientBatch_SingleOperation{
-						Id: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter) + "." + strconv.Itoa(numRequests),
+					requests = append(requests, &proto.SingleOperation{
 						Command: fmt.Sprintf("%d%v%v", rand.Intn(2),
 							cl.RandString(cl.keyLen),
 							cl.RandString(cl.valueLen)),
 					})
 					numRequests++
 				}
-				defaultWorkerIndex := threadNumber % len(cl.defaultWorkers)
-				cl.defaultWorkerMutexes[defaultWorkerIndex].RLock()
-				defaultWorker := cl.defaultWorkers[defaultWorkerIndex]
-				cl.defaultWorkerMutexes[defaultWorkerIndex].RUnlock()
-				// create a new client batch
-				batch := proto.ClientBatch{
-					Sender:   cl.clientName,
-					Receiver: int32(defaultWorker),
-					UniqueId: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
-					Type:     1,                                                                                                      // client request batch
-					Note:     "",
-					Requests: requests,
+				cl.receivedNumMutex.Lock()
+				if (cl.numSentBatches - cl.numReceivedBatches) > cl.window {
+					cl.receivedNumMutex.Unlock()
+					continue
 				}
-				common.Debug("Sent "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0, cl.debugLevel, cl.debugOn)
-				localCounter++
-				rpcPair := common.RPCPair{
-					Code: cl.messageCodes.ClientBatchRpc,
-					Obj:  &batch,
+				cl.receivedNumMutex.Unlock()
+
+				for i, _ := range cl.replicaAddrList {
+
+					var requests_i []*proto.SingleOperation
+
+					for j := 0; j < len(requests); j++ {
+						requests_i = append(requests_i, requests[j])
+					}
+
+					// create a new client batch
+					batch := proto.ClientBatch{
+						UniqueId: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
+						Requests: requests_i,
+						Sender:   int64(cl.clientName),
+					}
+					if cl.debugOn {
+						cl.debug("Sending "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
+					}
+					rpcPair := common.RPCPair{
+						Code: cl.messageCodes.ClientBatchRpc,
+						Obj:  &batch,
+					}
+
+					cl.sendMessage(i, rpcPair)
 				}
 
-				cl.sendMessage(defaultWorker, rpcPair)
+				batch := proto.ClientBatch{
+					UniqueId: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
+					Requests: requests,
+					Sender:   int64(cl.clientName),
+				}
+
+				cl.numSentBatches++
+
+				localCounter++
 				lastSent = time.Now()
 				cl.sentRequests[threadNumber] = append(cl.sentRequests[threadNumber], requestBatch{
 					batch: batch,
@@ -122,7 +152,7 @@ func (cl *Client) startScheduler() {
 }
 
 /*
-	Generate Poisson arrival times
+	generate Poisson arrival times
 */
 
 func (cl *Client) generateArrivalTimes() {
@@ -143,48 +173,6 @@ func (cl *Client) generateArrivalTimes() {
 			cl.arrivalTimeChan <- int64(arrivalTime)
 		}
 	}()
-}
-
-/*
-	Monitors the time the last response was received from each worker in the default workers array. If the default workers fail to send a response before a timeout, change the default worker
--- currently this is implemented, but not used because EPaxos and Rabia clients do not implement this
-*/
-
-func (cl *Client) startFailureDetector() {
-	go func() {
-		common.Debug("Starting failure detector", 0, cl.debugLevel, cl.debugOn)
-		for true {
-			time.Sleep(time.Duration(cl.workerTimeout) * time.Second)
-			for i := 0; i < len(cl.defaultWorkers); i++ {
-				workerIndex := cl.workerArrayIndex[cl.defaultWorkers[i]]
-				cl.lastSeenTimeMutexes[workerIndex].Lock()
-				if time.Now().Sub(cl.lastSeenTimes[workerIndex]).Seconds() > float64(cl.workerTimeout) {
-					common.Debug("Default worker "+strconv.Itoa(int(cl.defaultWorkers[i]))+" has time out, setting a new replica at "+fmt.Sprintf("%v", time.Now().Sub(cl.startTime)), 4, cl.debugLevel, cl.debugOn)
-					// change the default replica
-					cl.defaultWorkerMutexes[i].Lock()
-					cl.defaultWorkers[i] = cl.getRandomWorkerNode()
-					cl.defaultWorkerMutexes[i].Unlock()
-					common.Debug("New default worker "+fmt.Sprintf("%v", cl.defaultWorkers[i])+" at "+fmt.Sprintf("%v", time.Now().Sub(cl.startTime)), 4, cl.debugLevel, cl.debugOn)
-					cl.lastSeenTimes[workerIndex] = time.Now()
-				}
-				cl.lastSeenTimeMutexes[workerIndex].Unlock()
-			}
-		}
-	}()
-}
-
-/*
-	Returns a random worker node
-*/
-
-func (cl *Client) getRandomWorkerNode() int32 {
-	keys := make([]int32, len(cl.workerAddrList))
-	i := 0
-	for k := range cl.workerAddrList {
-		keys[i] = k
-		i++
-	}
-	return keys[rand.Intn(len(keys))]
 }
 
 /*

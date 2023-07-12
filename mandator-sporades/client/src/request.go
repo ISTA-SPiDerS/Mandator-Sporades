@@ -1,34 +1,47 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
 	"math"
 	"math/rand"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 	"unsafe"
 )
 
 /*
-	Upon receiving a client response, add the request to the received requests map
+	Upon receiving a client response, add the request to the received requests map, unless already received before
 */
 
 func (cl *Client) handleClientResponseBatch(batch *proto.ClientBatch) {
+	if cl.finished {
+		return
+	}
+
+	_, ok := cl.receivedResponses[batch.UniqueId]
+	if ok {
+		return
+	}
+
 	cl.receivedResponses[batch.UniqueId] = requestBatch{
 		batch: *batch,
 		time:  time.Now(), // record the time when the response was received
 	}
-	common.Debug("Added response Batch from "+strconv.Itoa(int(batch.Sender))+" to received array", 0, cl.debugLevel, cl.debugOn)
-	common.Debug("Response Batch contains "+fmt.Sprintf("%v", batch.Requests), 0, cl.debugLevel, cl.debugOn)
+	cl.receivedNumMutex.Lock()
+	cl.numReceivedBatches++
+	cl.receivedNumMutex.Unlock()
+	if cl.debugOn {
+		cl.debug("Added response Batch with id "+batch.UniqueId, 0)
+	}
 }
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
-	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to the default replica, and write batch to the correct array in sentRequests
+	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to all replicas, and write batch to the correct array in sentRequests
 	start the scheduler that schedules new requests
-	the thread sleeps for test duration and then starts processing the responses. This is to handle inflight responses after the test duration
+	the thread sleeps for a duration and then starts processing the responses. This is to handle inflight responses after the test duration
 */
 
 func (cl *Client) SendRequests() {
@@ -38,8 +51,9 @@ func (cl *Client) SendRequests() {
 
 	// end of test
 
-	time.Sleep(time.Duration(cl.testDuration) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
+	time.Sleep(time.Duration(10) * time.Second) // additional sleep duration to make sure that all the in-flight responses are received
 	fmt.Printf("Finish sending requests \n")
+	cl.finished = true
 	cl.computeStats()
 }
 
@@ -53,6 +67,9 @@ func (cl *Client) startRequestGenerators() {
 			localCounter := 0
 			lastSent := time.Now() // used to get how long to wait
 			for true {             // this runs forever
+				if cl.finished {
+					return
+				}
 				numRequests := 0
 				var requests []*proto.SingleOperation
 				// this loop collects requests until the minimum batch size is met OR the batch time is timeout
@@ -65,20 +82,47 @@ func (cl *Client) startRequestGenerators() {
 					})
 					numRequests++
 				}
-				// create a new client batch
+				cl.receivedNumMutex.Lock()
+				if (cl.numSentBatches - cl.numReceivedBatches) > cl.window {
+					cl.receivedNumMutex.Unlock()
+					continue
+				}
+				cl.receivedNumMutex.Unlock()
+
+				for i, _ := range cl.replicaAddrList {
+
+					var requests_i []*proto.SingleOperation
+
+					for j := 0; j < len(requests); j++ {
+						requests_i = append(requests_i, requests[j])
+					}
+
+					// create a new client batch
+					batch := proto.ClientBatch{
+						UniqueId: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
+						Requests: requests_i,
+						Sender:   int64(cl.clientName),
+					}
+					if cl.debugOn {
+						cl.debug("Sending "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
+					}
+					rpcPair := common.RPCPair{
+						Code: cl.messageCodes.ClientBatchRpc,
+						Obj:  &batch,
+					}
+
+					cl.sendMessage(i, rpcPair)
+				}
+
 				batch := proto.ClientBatch{
 					UniqueId: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
 					Requests: requests,
 					Sender:   int64(cl.clientName),
 				}
-				common.Debug("Sent "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0, cl.debugLevel, cl.debugOn)
-				localCounter++
-				rpcPair := common.RPCPair{
-					Code: cl.messageCodes.ClientBatchRpc,
-					Obj:  &batch,
-				}
 
-				cl.sendMessage(cl.defaultReplica, rpcPair)
+				cl.numSentBatches++
+
+				localCounter++
 				lastSent = time.Now()
 				cl.sentRequests[threadNumber] = append(cl.sentRequests[threadNumber], requestBatch{
 					batch: batch,
@@ -108,7 +152,7 @@ func (cl *Client) startScheduler() {
 }
 
 /*
-	Generate Poisson arrival times
+	generate Poisson arrival times
 */
 
 func (cl *Client) generateArrivalTimes() {

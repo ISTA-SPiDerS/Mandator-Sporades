@@ -1,19 +1,19 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 )
 
 /*
-	When a status response is received, print it to console
+	when a status response is received, print it to console
 */
 
 func (cl *Client) handleClientStatusResponse(response *proto.Status) {
-	fmt.Printf("Status response %v\n", response)
+	fmt.Printf("status response %v\n", response)
 }
 
 /*
@@ -21,7 +21,9 @@ func (cl *Client) handleClientStatusResponse(response *proto.Status) {
 */
 
 func (cl *Client) SendStatus(operationType int) {
-	common.Debug("Sending status request to all replicas", 0, cl.debugLevel, cl.debugOn)
+	if cl.debugOn {
+		cl.debug("Sending status request to all replicas", 0)
+	}
 
 	for name, _ := range cl.replicaAddrList {
 
@@ -37,7 +39,9 @@ func (cl *Client) SendStatus(operationType int) {
 		}
 
 		cl.sendMessage(name, rpcPair)
-		common.Debug("Sent status to "+strconv.Itoa(int(name)), 0, cl.debugLevel, cl.debugOn)
+		if cl.debugOn {
+			cl.debug("Sent status to "+strconv.Itoa(int(name)), 0)
+		}
 	}
 	time.Sleep(time.Duration(statusTimeout) * time.Second)
 }

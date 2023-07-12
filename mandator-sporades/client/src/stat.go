@@ -1,17 +1,17 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
 	"github.com/montanaflynn/stats"
-	"log"
 	"os"
+	"pipelined-sporades/proto"
 	"strconv"
 )
 
+const CLIENT_TIMEOUT = 2000000
+
 /*
-	iteratively calculate the number of elements in the 2d array
+	calculate the number of elements in the 2d array
 */
 func (cl *Client) getNumberOfSentRequests(requests [][]requestBatch) int {
 	count := 0
@@ -61,14 +61,13 @@ func (cl *Client) computeStats() {
 
 	f, err := os.Create(cl.logFilePath + strconv.Itoa(int(cl.clientName)) + ".txt") // log file
 	if err != nil {
-		common.Debug("Error creating the output log file", 1, cl.debugLevel, cl.debugOn)
-		log.Fatal(err)
+		panic("Error creating the output log file")
 	}
 	defer f.Close()
 
 	numTotalSentRequests := cl.getNumberOfSentRequests(cl.sentRequests)
-	numTotalReceivedResponses := cl.getNumberOfReceivedResponses(cl.receivedResponses)
 	var latencyList []int64 // contains the time duration spent requests in micro seconds
+	responses := 0
 	for i := 0; i < numRequestGenerationThreads; i++ {
 		fmt.Printf("Calculating stats for thread %d \n", i)
 		for j := 0; j < len(cl.sentRequests[i]); j++ {
@@ -80,9 +79,19 @@ func (cl *Client) computeStats() {
 				startTime := batch.time
 				endTime := responseBatch.time
 				batchLatency := endTime.Sub(startTime).Microseconds()
-				latencyList = cl.addValueNToArrayMTimes(latencyList, batchLatency, len(batch.batch.Requests))
-				cl.printRequests(batch.batch, batch.time.Sub(cl.startTime).Microseconds(), endTime.Sub(cl.startTime).Microseconds(), f)
-
+				if batchLatency < CLIENT_TIMEOUT {
+					latencyList = cl.addValueNToArrayMTimes(latencyList, batchLatency, len(batch.batch.Requests))
+					cl.printRequests(batch.batch, startTime.Sub(cl.startTime).Microseconds(), endTime.Sub(cl.startTime).Microseconds(), f)
+					responses += len(batch.batch.Requests)
+				} else {
+					latencyList = cl.addValueNToArrayMTimes(latencyList, CLIENT_TIMEOUT, len(batch.batch.Requests))
+					cl.printRequests(batch.batch, startTime.Sub(cl.startTime).Microseconds(), startTime.Sub(cl.startTime).Microseconds()+CLIENT_TIMEOUT, f)
+				}
+			} else {
+				startTime := batch.time
+				batchLatency := CLIENT_TIMEOUT
+				latencyList = cl.addValueNToArrayMTimes(latencyList, int64(batchLatency), len(batch.batch.Requests))
+				cl.printRequests(batch.batch, startTime.Sub(cl.startTime).Microseconds(), startTime.Sub(cl.startTime).Microseconds()+CLIENT_TIMEOUT, f)
 			}
 
 		}
@@ -91,17 +100,16 @@ func (cl *Client) computeStats() {
 	medianLatency, _ := stats.Median(cl.getFloat64List(latencyList))
 	percentile99, _ := stats.Percentile(cl.getFloat64List(latencyList), 99.0) // tail latency
 	duration := cl.testDuration
-	errorRate := (numTotalSentRequests - numTotalReceivedResponses) * 100.0 / numTotalSentRequests
+	errorRate := (numTotalSentRequests - responses) * 100.0 / numTotalSentRequests
 
-	fmt.Printf("Total time := %v seconds\n", duration)
-	fmt.Printf("Throughput (successfully committed requests) := %v requests per second\n", len(latencyList)/int(duration))
+	fmt.Printf("Throughput := %v requests per second\n", responses/duration)
 	fmt.Printf("Median Latency := %v micro seconds per request\n", medianLatency)
 	fmt.Printf("99 pecentile latency := %v micro seconds per request\n", percentile99)
 	fmt.Printf("Error Rate := %v \n", float64(errorRate))
 }
 
 /*
-	Converts int64[] to float64[]
+	converts int64[] to float64[]
 */
 
 func (cl *Client) getFloat64List(list []int64) []float64 {
@@ -113,7 +121,7 @@ func (cl *Client) getFloat64List(list []int64) []float64 {
 }
 
 /*
-	Print a client request batch with arrival time and end time w.r.t test start time
+	print a client request batch with arrival time and end time w.r.t test start time
 */
 
 func (cl *Client) printRequests(messages proto.ClientBatch, startTime int64, endTime int64, f *os.File) {

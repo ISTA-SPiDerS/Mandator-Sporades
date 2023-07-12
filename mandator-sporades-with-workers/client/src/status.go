@@ -1,36 +1,36 @@
 package src
 
 import (
-	"async-consensus/common"
-	"async-consensus/proto"
 	"fmt"
+	"pipelined-sporades/common"
+	"pipelined-sporades/proto"
 	"strconv"
 	"time"
 )
 
 /*
-	When a status response is received, print it to console
+	when a status response is received, print it to console
 */
 
 func (cl *Client) handleClientStatusResponse(response *proto.Status) {
-	fmt.Print("Status response from " + strconv.Itoa(int(response.Sender)) + " \n")
+	fmt.Printf("status response %v\n", response)
 }
 
 /*
-	Send a status request to all the workers
+	Send a status request to all the replicas
 */
 
 func (cl *Client) SendStatus(operationType int) {
-	common.Debug("Sending status request to all workers", 0, cl.debugLevel, cl.debugOn)
+	if cl.debugOn {
+		cl.debug("Sending status request to all replicas", 0)
+	}
 
-	for name, _ := range cl.workerAddrList {
+	for name, _ := range cl.replicaAddrList {
 
 		statusRequest := proto.Status{
-			Sender:   cl.clientName,
-			Receiver: name,
-			UniqueId: "",
-			Type:     int32(operationType),
-			Note:     "",
+			Type:   int32(operationType),
+			Note:   "",
+			Sender: int64(cl.clientName),
 		}
 
 		rpcPair := common.RPCPair{
@@ -39,7 +39,9 @@ func (cl *Client) SendStatus(operationType int) {
 		}
 
 		cl.sendMessage(name, rpcPair)
-		common.Debug("Sent status to "+strconv.Itoa(int(name)), 0, cl.debugLevel, cl.debugOn)
+		if cl.debugOn {
+			cl.debug("Sent status to "+strconv.Itoa(int(name)), 0)
+		}
 	}
 	time.Sleep(time.Duration(statusTimeout) * time.Second)
 }
