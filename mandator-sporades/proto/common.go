@@ -14,7 +14,7 @@ type Serializable interface {
 }
 
 /*
-	a struct that allocates a unique uint8 for each message type. When you define a new proto message type, add the message to here
+	a struct that assigns a unique uint8 for each message type. When you define a new proto message type, add the message to here
 */
 
 type MessageCode struct {
