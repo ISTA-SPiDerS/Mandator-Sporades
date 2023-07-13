@@ -25,25 +25,43 @@ type Benchmark struct {
 */
 
 func Init(mode int, name int32, keyLen int, valueLen int) *Benchmark {
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-	rdsContext := context.Background()
-	client.FlushAll(rdsContext) // delete the data base
+	if mode == 1 {
 
-	b := Benchmark{
-		mode:        mode,
-		RedisClient: client,
-		RedisCtx:    rdsContext,
-		KVStore:     make(map[string]string),
-		name:        name,
-		keyLen:      keyLen,
-		valueLen:    valueLen,
+		client := redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "", // no password set
+			DB:       0,  // use default DB
+		})
+		rdsContext := context.Background()
+		client.FlushAll(rdsContext) // delete the data base
+
+		b := Benchmark{
+			mode:        mode,
+			RedisClient: client,
+			RedisCtx:    rdsContext,
+			KVStore:     nil,
+			name:        name,
+			keyLen:      keyLen,
+			valueLen:    valueLen,
+		}
+
+		return &b
+	} else if mode == 0 {
+		b := Benchmark{
+			mode:        mode,
+			RedisClient: nil,
+			RedisCtx:    nil,
+			KVStore:     make(map[string]string),
+			name:        name,
+			keyLen:      keyLen,
+			valueLen:    valueLen,
+		}
+
+		return &b
+	} else {
+		panic("should not happen")
 	}
 
-	return &b
 }
 
 /*
