@@ -7,10 +7,18 @@ peers:
     address: 10.156.33.141:10001
   - name: 3
     address: 10.156.33.142:10002
+  - name: 4
+    address: 10.156.33.143:10003
+  - name: 5
+    address: 10.156.33.144:10004
 clients:
-  - name: 11
+  - name: 21
     address: 10.156.33.145:11000
-  - name: 12
+  - name: 22
     address: 10.156.33.146:11001
-  - name: 13
+  - name: 23
     address: 10.156.33.147:11002
+  - name: 24
+    address: 10.156.33.148:11003
+  - name: 25
+    address: 10.156.33.149:11004
