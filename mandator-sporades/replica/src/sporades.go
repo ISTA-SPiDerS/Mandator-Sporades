@@ -1,7 +1,6 @@
 package src
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"mandator-sporades/common"
@@ -30,14 +29,12 @@ type AsyncConsensus struct {
 
 	lastCommittedBlock  *proto.AsyncConsensus_Block // the last committed block
 	lastCommittedRounds []int                       // for each replica, the index of the mempool block that was last committed
-	randomness          []int                       // predefined random leader node indexes (not name) for each view
+	randomness          []int                       // predefined random leader node  name for each view
 
 	sentLevel2Block   map[int32]bool // records if level 2 fallback block was sent for view v; key is v
 	startTime         time.Time      // time when the consensus was started
 	lastCommittedTime time.Time      // time when the last consensus block was committed
 }
-
-// //todo check if voteReplies timeoutMessages contain duplicates before adding new items
 
 /*
 	Init Async Consensus Data Structs
@@ -84,7 +81,7 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *AsyncCon
 	s2 := rand.NewSource(42)
 	r2 := rand.New(s2)
 	for i := 0; i < 1000000; i++ {
-		asyncConsensus.randomness = append(asyncConsensus.randomness, (r2.Intn(42))%numReplicas)
+		asyncConsensus.randomness = append(asyncConsensus.randomness, (r2.Intn(42))%numReplicas+1)
 		asyncConsensus.sentLevel2Block[int32(i)] = false
 	}
 
@@ -95,15 +92,8 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *AsyncCon
 	Returns the leader for the view; view leaders are pre-defined
 */
 
-func (rp *Replica) getLeader(round int32, view int32) int32 {
-	leaderIndex := rp.asyncConsensus.randomness[view+10]
-	// find the leader name corresponding to leaderIndex
-	for name, position := range rp.replicaArrayIndex {
-		if position == int(leaderIndex) {
-			return name
-		}
-	}
-	panic("Leader not found for " + strconv.Itoa(int(view)))
+func (rp *Replica) getLeader(view int32) int32 {
+	return int32(rp.asyncConsensus.randomness[view+10])
 }
 
 /*
@@ -114,15 +104,13 @@ func (rp *Replica) sendGenesisConsensusVote() {
 	rp.asyncConsensus.startTime = time.Now()
 	rp.asyncConsensus.lastCommittedTime = time.Now()
 
-	//rp.livenessDebug()
-
 	//send <vote, v cur , r cur , block high > to leader
-	nextLeader := rp.getLeader(rp.asyncConsensus.rCurr+1, rp.asyncConsensus.vCurr)
+	nextLeader := rp.getLeader(rp.asyncConsensus.vCurr)
 
 	genesisBlock, ok := rp.asyncConsensus.consensusPool.Get("genesis-block")
 
 	if !ok {
-		panic("Genesis consensus block not found")
+		panic("genesis consensus block not found")
 	}
 
 	bootStrapVote := proto.AsyncConsensus{
@@ -161,7 +149,7 @@ func (rp *Replica) setViewTimer() {
 	rp.asyncConsensus.viewTimer = common.NewTimerWithCancel(time.Duration(rp.viewTimeout) * time.Microsecond)
 	vCurr := rp.asyncConsensus.vCurr
 	rCurr := rp.asyncConsensus.rCurr
-	rp.asyncConsensus.viewTimer.SetTimeoutFuntion(func() {
+	rp.asyncConsensus.viewTimer.SetTimeoutFunction(func() {
 		// this function runs in a seperate thread, hence we do not send timeout message in this function, instead send a timeout-internal signal
 		internalTimeoutNotification := proto.AsyncConsensus{
 			Sender:      rp.name,
@@ -195,14 +183,7 @@ func (rp *Replica) setViewTimer() {
 
 func (rp *Replica) handleAsyncConsensus(message *proto.AsyncConsensus) {
 
-	debugLevel := 0
-
-	if time.Now().Sub(rp.asyncConsensus.lastCommittedTime).Seconds() > 5 {
-		// haven't committed anything in the last 5 seconds
-		debugLevel = 10
-	} else {
-		debugLevel = 0
-	}
+	debugLevel := rp.debugLevel
 
 	if message.Type == 1 {
 		if rp.debugOn {
@@ -331,15 +312,15 @@ func (rp *Replica) convertToInt32Array(elements []int) []int32 {
 
 func (rp *Replica) sendExternalConsensusRequest(id string) {
 
-	randomReplica := common.Get_Some_Node(rp.replicaArrayIndex)
+	randomReplica := rand.Intn(42)%rp.numReplicas + 1
 
-	for randomReplica == rp.name {
-		randomReplica = common.Get_Some_Node(rp.replicaArrayIndex)
+	for randomReplica == int(rp.name) {
+		randomReplica = rand.Intn(42)%rp.numReplicas + 1
 	}
 
 	externalConsensusRequest := proto.AsyncConsensus{
 		Sender:      rp.name,
-		Receiver:    randomReplica,
+		Receiver:    int32(randomReplica),
 		UniqueId:    id,
 		Type:        7,
 		Note:        "",
@@ -355,9 +336,9 @@ func (rp *Replica) sendExternalConsensusRequest(id string) {
 		Obj:  &externalConsensusRequest,
 	}
 
-	rp.sendMessage(randomReplica, rpcPair)
+	rp.sendMessage(int32(randomReplica), rpcPair)
 	if rp.debugOn {
-		common.Debug("Sent external consensus request message with type 7 to "+strconv.Itoa(int(randomReplica)), 1, rp.debugLevel, rp.debugOn)
+		common.Debug("Sent external consensus request message with type 7 to "+strconv.Itoa(randomReplica), 1, rp.debugLevel, rp.debugOn)
 	}
 }
 
@@ -412,44 +393,12 @@ func (rp *Replica) handleConsensusExternalResponseMessage(message *proto.AsyncCo
 
 func (rp *Replica) makeGreatGrandParentNil(blockOri *proto.AsyncConsensus_Block) *proto.AsyncConsensus_Block {
 
-	block, err := CloneMyStruct(blockOri)
-	if err != nil {
-		panic(err.Error())
-	}
+	block := blockOri
 
-	parent := block.Parent
-	if parent != nil {
-		grandParent := parent.Parent
-		if grandParent != nil {
-			greatGrandParent := grandParent.Parent
-			if greatGrandParent != nil {
-				block.Parent.Parent.Parent = nil
-				return block
-			} else {
-				return block
-			}
-		} else {
-			return block
-		}
-	} else {
-		return block
+	if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil {
+		block.Parent.Parent.Parent = nil
 	}
-}
-
-/*
-	Deep copy a consensus block
-*/
-
-func CloneMyStruct(orig *proto.AsyncConsensus_Block) (*proto.AsyncConsensus_Block, error) {
-	origJSON, err := json.Marshal(orig)
-	if err != nil {
-		panic(err)
-	}
-	clone := proto.AsyncConsensus_Block{}
-	if err = json.Unmarshal(origJSON, &clone); err != nil {
-		return nil, err
-	}
-	return &clone, nil
+	return block
 }
 
 /*
@@ -508,15 +457,18 @@ func (rp *Replica) printLogConsensus() {
 				lastMemPoolCounter := int(nextMemBlockLogPositionsToCommit[j])
 
 				for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
-					memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
-					memBlock, _ := rp.memPool.blockMap.Get(memPoolName)
+					memPoolName := strconv.Itoa(j+1) + "." + strconv.Itoa(k)
+					memBlock, ok := rp.memPool.blockMap.Get(memPoolName)
+					if !ok {
+						panic("memblock " + memPoolName + " not found")
+					}
 					for clientBatchIndex := 0; clientBatchIndex < len(memBlock.ClientBatches); clientBatchIndex++ {
 						clientBatch := memBlock.ClientBatches[clientBatchIndex]
 						clientBatchID := clientBatch.UniqueId
 						clientBatchCommands := clientBatch.Requests
 						for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
-							clientRequestID := clientBatchCommands[clientRequestIndex].Command
-							_, _ = f.WriteString(nextBlockToCommit.Id + "-" + memPoolName + "-" + clientBatchID + "-" + strconv.Itoa(clientRequestIndex) + ":" + clientRequestID + "\n")
+							clientRequest := clientBatchCommands[clientRequestIndex].Command
+							_, _ = f.WriteString(nextBlockToCommit.Id + "-" + memPoolName + "-" + clientBatchID + "-" + strconv.Itoa(clientRequestIndex) + ":" + clientRequest + "\n")
 						}
 					}
 
