@@ -1,8 +1,6 @@
 package common
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"mandator-sporades/configuration"
 	"mandator-sporades/proto"
@@ -73,7 +71,7 @@ func ExtractSequenceNumber(unique_id string) (int32, int) {
 
 func Get_Some_Node(m map[int32]int) int32 {
 	for k := range m {
-		return k // go map iteration is random!
+		return k // go map iteration is random
 	}
 	panic("should not happen")
 }
@@ -121,7 +119,7 @@ func (t *TimerWithCancel) Start() {
 	Set a function to call when timeout
 */
 
-func (t *TimerWithCancel) SetTimeoutFuntion(f func()) {
+func (t *TimerWithCancel) SetTimeoutFunction(f func()) {
 	t.f = f
 }
 
@@ -139,16 +137,4 @@ func (t *TimerWithCancel) Cancel() {
 		break
 	}
 
-}
-
-/*
-	A util function to get the size of a message
-*/
-
-func GetRealSizeOf(v interface{}) (int, error) {
-	b := new(bytes.Buffer)
-	if err := gob.NewEncoder(b).Encode(v); err != nil {
-		return 0, err
-	}
-	return b.Len(), nil
 }
