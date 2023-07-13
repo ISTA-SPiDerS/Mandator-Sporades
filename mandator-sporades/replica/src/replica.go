@@ -9,11 +9,10 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 )
 
 /*
- defines the Replica struct and the new method that is invoked when creating a new replica
+	defines the Replica struct and the new method that is invoked when creating a new replica
 */
 
 type Replica struct {
@@ -22,17 +21,15 @@ type Replica struct {
 
 	numReplicas int
 
-	clientAddrList             map[int32]string // map with the IP:port address of every client
-	clientArrayIndex           map[int32]int    // map each client name to a unique index, this is required because the identifiers can be arbitary
-	incomingClientReaders      []*bufio.Reader  // socket readers for each client
-	outgoingClientWriters      []*bufio.Writer  // socket writer for each client
-	outgoingClientWriterMutexs []sync.Mutex     // for mutual exclusion for each buffio.writer outgoingClientWriters
+	clientAddrList             map[int32]string        // map with the IP:port address of every client
+	incomingClientReaders      map[int32]*bufio.Reader // socket readers for each client
+	outgoingClientWriters      map[int32]*bufio.Writer // socket writer for each client
+	outgoingClientWriterMutexs map[int32]*sync.Mutex   // for mutual exclusion for each buffio.writer outgoingClientWriters
 
-	replicaAddrList             map[int32]string // map with the IP:port address of every replica node
-	replicaArrayIndex           map[int32]int    // map each replica name to a unique index, this is required because the identifiers can be arbitary
-	incomingReplicaReaders      []*bufio.Reader  // socket readers for each replica
-	outgoingReplicaWriters      []*bufio.Writer  // socket writer for each replica
-	outgoingReplicaWriterMutexs []sync.Mutex     // for mutual exclusion for each buffio.writer outgoingReplicaWriters
+	replicaAddrList             map[int32]string        // map with the IP:port address of every replica node
+	incomingReplicaReaders      map[int32]*bufio.Reader // socket readers for each replica
+	outgoingReplicaWriters      map[int32]*bufio.Writer // socket writer for each replica
+	outgoingReplicaWriterMutexs map[int32]*sync.Mutex   // for mutual exclusion for each buffio.writer outgoingReplicaWriters
 
 	rpcTable     map[uint8]*common.RPCPair // map each RPC type (message type) to its unique number
 	messageCodes proto.MessageCode
@@ -61,15 +58,17 @@ type Replica struct {
 
 	logPrinted bool // to check if log was printed before
 
-	asyncBatchTime int // delay for consensus messages
+	networkBatchTime int // delay for consensus propose messages ms
 
 	consAlgo string // async/paxos
 
-	benchmarkMode int        // 0 for resident K/V store, 1 for redis
-	state         *Benchmark // k/v store
+	benchmarkMode    int        // 0 for resident K/V store, 1 for redis
+	state            *Benchmark // k/v store
+	isAsync          bool
+	asynchronousTime int // ms for simulating asynchronous timeouts
 }
 
-const numOutgoingThreads = 100       // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path todo this number should be tuned
+const numOutgoingThreads = 100       // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
 const incomingBufferSize = 100000000 // the size of the buffer which receives all the incoming messages
 const outgoingBufferSize = 100000000 // size of the buffer that collects messages to be written to the wire
 
@@ -77,23 +76,21 @@ const outgoingBufferSize = 100000000 // size of the buffer that collects message
 	instantiate a new replica instance, allocate the buffers
 */
 
-func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, mode int, debugLevel int, viewTimeout int, window int, asyncBatchTime int, consAlgo string, benchmarkMode int, keyLen int, valLen int) *Replica {
+func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, mode int, debugLevel int, viewTimeout int, window int, networkBatchTime int, consAlgo string, benchmarkMode int, keyLen int, valLen int, isAsync bool, asyncSimTime int) *Replica {
 	rp := Replica{
 		name:          name,
 		listenAddress: common.GetAddress(cfg.Peers, name),
 		numReplicas:   len(cfg.Peers),
 
 		clientAddrList:             make(map[int32]string),
-		clientArrayIndex:           make(map[int32]int),
-		incomingClientReaders:      make([]*bufio.Reader, len(cfg.Clients)),
-		outgoingClientWriters:      make([]*bufio.Writer, len(cfg.Clients)),
-		outgoingClientWriterMutexs: make([]sync.Mutex, len(cfg.Clients)),
+		incomingClientReaders:      make(map[int32]*bufio.Reader),
+		outgoingClientWriters:      make(map[int32]*bufio.Writer),
+		outgoingClientWriterMutexs: make(map[int32]*sync.Mutex),
 
 		replicaAddrList:             make(map[int32]string),
-		replicaArrayIndex:           make(map[int32]int),
-		incomingReplicaReaders:      make([]*bufio.Reader, len(cfg.Peers)),
-		outgoingReplicaWriters:      make([]*bufio.Writer, len(cfg.Peers)),
-		outgoingReplicaWriterMutexs: make([]sync.Mutex, len(cfg.Peers)),
+		incomingReplicaReaders:      make(map[int32]*bufio.Reader),
+		outgoingReplicaWriters:      make(map[int32]*bufio.Writer),
+		outgoingReplicaWriterMutexs: make(map[int32]*sync.Mutex),
 
 		rpcTable:     make(map[uint8]*common.RPCPair),
 		messageCodes: proto.GetRPCCodes(),
@@ -113,10 +110,12 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		consensusStarted:    false,
 		viewTimeout:         viewTimeout,
 		logPrinted:          false,
-		asyncBatchTime:      asyncBatchTime,
+		networkBatchTime:    networkBatchTime,
 		consAlgo:            consAlgo,
 		benchmarkMode:       benchmarkMode,
 		state:               Init(benchmarkMode, name, keyLen, valLen),
+		isAsync:             isAsync,
+		asynchronousTime:    asyncSimTime,
 	}
 
 	// init mem pool
@@ -143,22 +142,18 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		rp.memPool.blockMap.AddAck(strconv.Itoa(int(rp.name))+"."+strconv.Itoa(0), int32(peer))
 	}
 
-	common.Debug("Created a new replica instance", 0, rp.debugLevel, rp.debugOn)
-
 	// initialize clientAddrList
 	for i := 0; i < len(cfg.Clients); i++ {
 		int32Name, _ := strconv.ParseInt(cfg.Clients[i].Name, 10, 32)
 		rp.clientAddrList[int32(int32Name)] = cfg.Clients[i].Address
-		rp.clientArrayIndex[int32(int32Name)] = i
-		rp.outgoingClientWriterMutexs[i] = sync.Mutex{}
+		rp.outgoingClientWriterMutexs[int32(int32Name)] = &sync.Mutex{}
 	}
 
 	// initialize replicaAddrList
 	for i := 0; i < len(cfg.Peers); i++ {
 		int32Name, _ := strconv.ParseInt(cfg.Peers[i].Name, 10, 32)
 		rp.replicaAddrList[int32(int32Name)] = cfg.Peers[i].Address
-		rp.replicaArrayIndex[int32(int32Name)] = i
-		rp.outgoingReplicaWriterMutexs[i] = sync.Mutex{}
+		rp.outgoingReplicaWriterMutexs[int32(int32Name)] = &sync.Mutex{}
 	}
 
 	/*
@@ -169,8 +164,6 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 	rp.RegisterRPC(new(proto.MemPool), rp.messageCodes.MemPoolRPC)
 	rp.RegisterRPC(new(proto.AsyncConsensus), rp.messageCodes.AsyncConsensus)
 	rp.RegisterRPC(new(proto.PaxosConsensus), rp.messageCodes.PaxosConsensus)
-
-	common.Debug("Registered RPCs in the table", 0, rp.debugLevel, rp.debugOn)
 
 	pid := os.Getpid()
 	fmt.Printf("--Initialized %v replica %v with process id: %v \n", consAlgo, name, pid)
@@ -201,16 +194,11 @@ func (rp *Replica) getNodeType(id int32) string {
 }
 
 /*
-	A helper function to check if I am still alive, and to print the channel lengths
+	debug print
 */
 
-func (rp *Replica) livenessDebug() {
-	go func() {
-		for true {
-			time.Sleep(2 * time.Second)
-			common.Debug(fmt.Sprintf("\n \n %v is alive with incoming channel length of %v and outgoing channel length of %v\n \n",
-				rp.name, len(rp.incomingChan), len(rp.outgoingMessageChan)), 0, rp.debugLevel, rp.debugOn)
-		}
-	}()
-
+func (rp *Replica) debug(message string, level int) {
+	if rp.debugOn && level >= rp.debugLevel {
+		fmt.Print(message)
+	}
 }

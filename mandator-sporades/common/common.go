@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"mandator-sporades/configuration"
 	"mandator-sporades/proto"
 	"strconv"
@@ -38,16 +37,6 @@ func GetAddress(nodes []configuration.Instance, name int32) string {
 		}
 	}
 	panic("should not happen")
-}
-
-/*
-	prints the debug message to stdout, depending on the debug level
-*/
-
-func Debug(message string, level int, currentLevel int, isDebugOn bool) {
-	if isDebugOn && level >= currentLevel {
-		fmt.Printf(message + "\n")
-	}
 }
 
 /*
