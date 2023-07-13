@@ -1,22 +1,19 @@
 syntax = "proto3";
 option go_package = "proto/";
 
-/*
-  Client batch refers to a client request batch, or a client response batch
-  Client request batch is sent by a client once it has collected a batch of client requests
-  Client response batch is sent by a replica node
-*/
-
 message SingleOperation {
   string command = 1;
 }
+
+/*
+  Client batch refers to a client request batch, or a client response batch
+*/
 
 message ClientBatch {
   string unique_id = 1;
   repeated SingleOperation requests = 2;
   int64 sender = 3;
 }
-
 
 /*
   Status is sent by a client to inform replicas about actions that include, but not limited to
@@ -32,10 +29,10 @@ message Status {
 
 /*
   MemPool is the message for all messages related to the MemPool
-  Mem-Pool-Mem-Block (from replica to replica)
-  Mem-Pool-Mem-Block-Ack (from replica to replica)
-  Mem-Pool-Mem-Block-Request (from replica to replica)
-  Mem-Pool-Mem-Block-Response (from replica to replica)
+    Mem-Pool-Mem-Block (from replica to replica)
+    Mem-Pool-Mem-Block-Ack (from replica to replica)
+    Mem-Pool-Mem-Block-Request (from replica to replica)
+    Mem-Pool-Mem-Block-Response (from replica to replica)
 */
 
 message MemPool {
@@ -56,7 +53,7 @@ message MemPool {
 }
 
 /*
-  AsyncConsensus defines the single consensus proto message type
+    AsyncConsensus defines the single consensus proto message type
 */
 
 message AsyncConsensus {
