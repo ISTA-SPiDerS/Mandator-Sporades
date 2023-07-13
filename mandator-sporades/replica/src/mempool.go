@@ -5,13 +5,14 @@ import (
 	"log"
 	"mandator-sporades/common"
 	"mandator-sporades/proto"
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
 )
 
 /*
-	Defines the data structures specific to Mem Blocks
+	defines the data structures specific to Mem Blocks
 */
 type MemPool struct {
 	blockMap             MessageStore         //saves the blocks
@@ -68,10 +69,10 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 		parentId := message.ParentBlockId
 		node, sequence := common.ExtractSequenceNumber(parentId)
 		if node != rp.name {
-			rp.memPool.lastCompletedRounds[rp.replicaArrayIndex[node]] = sequence
+			rp.memPool.lastCompletedRounds[node-1] = sequence
 		}
 		if rp.debugOn {
-			common.Debug("Last Completed Rounds is "+fmt.Sprintf("%v", rp.memPool.lastCompletedRounds), 0, rp.debugLevel, rp.debugOn)
+			common.Debug("Last Completed Rounds are "+fmt.Sprintf("%v", rp.memPool.lastCompletedRounds), 0, rp.debugLevel, rp.debugOn)
 		}
 		// send Mem-Pool-Mem-Block-Ack 2 to the sender
 		memPoolAck := proto.MemPool{
@@ -102,20 +103,18 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 		//			set AwaitingAcks to false
 		//			set lastCompletedRound[self]++
 		_, sequence := common.ExtractSequenceNumber(message.UniqueId)
-		if sequence > rp.memPool.lastSeenAck[rp.replicaArrayIndex[message.Sender]] {
-			rp.memPool.lastSeenAck[rp.replicaArrayIndex[message.Sender]] = sequence
+		if sequence > rp.memPool.lastSeenAck[message.Sender-1] {
+			rp.memPool.lastSeenAck[message.Sender-1] = sequence
 		}
 		if message.UniqueId == strconv.Itoa(int(rp.name))+"."+strconv.Itoa(rp.memPool.indexCounter-1) && rp.memPool.awaitingAcks == true {
 			rp.memPool.blockMap.AddAck(message.UniqueId, message.Sender)
 			acks := rp.memPool.blockMap.GetAcks(message.UniqueId)
 			if acks != nil && len(acks) == len(rp.replicaAddrList)/2+1 {
 				rp.memPool.awaitingAcks = false
-				rp.memPool.lastCompletedRounds[rp.replicaArrayIndex[rp.name]]++
+				rp.memPool.lastCompletedRounds[rp.name-1]++
 				if rp.debugOn {
 					common.Debug("Received n-f acks for the block "+message.UniqueId, 0, rp.debugLevel, rp.debugOn)
 				}
-				// for testing purposes of the mem pool, send a dummy response to the client
-				//rp.sendDummyResponse(message.UniqueId)
 			}
 		}
 	} else if message.Type == 3 {
@@ -163,7 +162,7 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 */
 
 func (rp *Replica) createNewMemBlock() {
-	if (len(rp.memPool.incomingBuffer) > rp.replicaBatchSize || (time.Now().Sub(rp.memPool.lastTimeBlockCreated).Microseconds() > int64(rp.replicaBatchTime) &&
+	if (len(rp.memPool.incomingBuffer) >= rp.replicaBatchSize || (time.Now().Sub(rp.memPool.lastTimeBlockCreated).Microseconds() > int64(rp.replicaBatchTime) &&
 		len(rp.memPool.incomingBuffer) > 0)) && rp.memPool.awaitingAcks == false {
 
 		if rp.debugOn {
@@ -179,12 +178,21 @@ func (rp *Replica) createNewMemBlock() {
 			return
 		}
 
+		var batches []*proto.ClientBatch
+		if len(rp.memPool.incomingBuffer) <= rp.replicaBatchSize {
+			batches = rp.memPool.incomingBuffer
+			rp.memPool.incomingBuffer = make([]*proto.ClientBatch, 0)
+		} else {
+			batches = rp.memPool.incomingBuffer[:rp.replicaBatchSize]
+			rp.memPool.incomingBuffer = rp.memPool.incomingBuffer[rp.replicaBatchSize:]
+		}
+
 		newMemBlock := proto.MemPool{
 			Sender:        rp.name,
 			UniqueId:      strconv.Itoa(int(rp.name)) + "." + strconv.Itoa(rp.memPool.indexCounter),
 			Type:          1,
 			Note:          "",
-			ClientBatches: rp.memPool.incomingBuffer,
+			ClientBatches: batches,
 			RoundNumber:   int64(rp.memPool.indexCounter),
 			ParentBlockId: bParentId,
 			Creator:       rp.name,
@@ -216,9 +224,8 @@ func (rp *Replica) createNewMemBlock() {
 			rp.sendBlockToBestMajority(&newMemBlock, replicas)
 		}
 
-		//	increment the counter, reset the incoming buffer, and update time
+		//	increment the counter, and update time
 		rp.memPool.indexCounter++
-		rp.memPool.incomingBuffer = make([]*proto.ClientBatch, 0)
 		rp.memPool.lastTimeBlockCreated = time.Now()
 	}
 }
@@ -250,7 +257,7 @@ func (rp *Replica) sendMemBlockToEveryone(m *proto.MemPool, replicas []int32) {
 
 		rp.sendMessage(replica, rpcPair)
 		_, sequence := common.ExtractSequenceNumber(m.UniqueId)
-		rp.memPool.lastSentBlock[rp.replicaArrayIndex[replica]] = sequence
+		rp.memPool.lastSentBlock[replica-1] = sequence
 
 		if rp.debugOn {
 			common.Debug("Sent Mem Pool message with type 1 to "+strconv.Itoa(int(replica)), 0, rp.debugLevel, rp.debugOn)
@@ -274,7 +281,7 @@ func (rp *Replica) sendBlockToBestMajority(m *proto.MemPool, replicas []int32) {
 		healthyReplicas = make([]int32, 0)
 		healthyCount = 0
 		for i := 0; i < len(replicas); i++ {
-			if rp.memPool.lastSentBlock[rp.replicaArrayIndex[replicas[i]]]-rp.memPool.lastSeenAck[rp.replicaArrayIndex[replicas[i]]] < rp.memPool.window+threshold {
+			if rp.memPool.lastSentBlock[replicas[i]-1]-rp.memPool.lastSeenAck[replicas[i]-1] < rp.memPool.window+threshold {
 				healthyReplicas = append(healthyReplicas, replicas[i])
 				healthyCount++
 			}
@@ -326,10 +333,10 @@ func (rp *Replica) sendDummyResponse(id string) {
 
 func (rp *Replica) sendExternalMemBlockRequest(id string) {
 
-	randomReplica := common.Get_Some_Node(rp.replicaArrayIndex)
+	randomReplica := rand.Intn(42)%rp.numReplicas + 1
 
-	for randomReplica == rp.name {
-		randomReplica = common.Get_Some_Node(rp.replicaArrayIndex)
+	for randomReplica == int(rp.name) {
+		randomReplica = rand.Intn(42)%rp.numReplicas + 1
 	}
 
 	externalMemBlockRequest := proto.MemPool{
@@ -343,9 +350,9 @@ func (rp *Replica) sendExternalMemBlockRequest(id string) {
 		Obj:  &externalMemBlockRequest,
 	}
 
-	rp.sendMessage(randomReplica, rpcPair)
+	rp.sendMessage(int32(randomReplica), rpcPair)
 	if rp.debugOn {
-		common.Debug("Sent Mem Pool Mem block request message with type 3 to "+strconv.Itoa(int(randomReplica)), 0, rp.debugLevel, rp.debugOn)
+		common.Debug("Sent Mem Pool Mem block request message with type 3 to "+strconv.Itoa(randomReplica), 0, rp.debugLevel, rp.debugOn)
 	}
 }
 
@@ -375,8 +382,8 @@ func (rp *Replica) printLogMemPool() {
 			clientBatchID := clientBatch.UniqueId
 			clientBatchCommands := clientBatch.Requests
 			for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
-				clientRequestID := clientBatchCommands[clientRequestIndex].Command
-				_, _ = f.WriteString(memBlockID + "-" + clientBatchID + "-" + strconv.Itoa(clientRequestIndex) + ":" + clientRequestID + "\n")
+				clientRequest := clientBatchCommands[clientRequestIndex].Command
+				_, _ = f.WriteString(memBlockID + "-" + clientBatchID + "-" + strconv.Itoa(clientRequestIndex) + ":" + clientRequest + "\n")
 			}
 		}
 
