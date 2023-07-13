@@ -59,6 +59,7 @@ type Client struct {
 	numSentBatches     int64
 	numReceivedBatches int64
 	receivedNumMutex   *sync.Mutex
+	designatedReplica  int
 }
 
 /*
@@ -81,7 +82,7 @@ const arrivalBufferSize = 1000000     // size of the buffer that collects new re
 	Instantiate a new Client instance, allocate the buffers
 */
 
-func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clientBatchSize int, clientBatchTime int, testDuration int, arrivalRate int, requestType string, operationType int, debugOn bool, debugLevel int, keyLen int, valLen int, window int64) *Client {
+func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clientBatchSize int, clientBatchTime int, testDuration int, arrivalRate int, requestType string, operationType int, debugOn bool, debugLevel int, keyLen int, valLen int, window int64, designatedReplica int) *Client {
 	cl := Client{
 		clientName:                  name,
 		numReplicas:                 len(cfg.Peers),
@@ -116,10 +117,11 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clie
 		numSentBatches:      0,
 		numReceivedBatches:  0,
 		receivedNumMutex:    &sync.Mutex{},
+		designatedReplica:   designatedReplica,
 	}
-
-	cl.debug("Created a new client instance", 0)
-
+	if cl.debugOn {
+		cl.debug("Created a new client instance", 0)
+	}
 	// initialize replicaAddrList
 	for i := 0; i < len(cfg.Peers); i++ {
 		int32Name, _ := strconv.ParseInt(cfg.Peers[i].Name, 10, 32)

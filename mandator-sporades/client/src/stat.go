@@ -13,6 +13,7 @@ const CLIENT_TIMEOUT = 2000000
 /*
 	calculate the number of elements in the 2d array
 */
+
 func (cl *Client) getNumberOfSentRequests(requests [][]requestBatch) int {
 	count := 0
 	for i := 0; i < numRequestGenerationThreads; i++ {

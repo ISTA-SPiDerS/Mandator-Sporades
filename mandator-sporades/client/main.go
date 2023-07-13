@@ -22,6 +22,7 @@ func main() {
 	keyLen := flag.Int("keyLen", 8, "key length")
 	valLen := flag.Int("valLen", 8, "value length")
 	window := flag.Int64("window", 1000, "number of out standing client batches")
+	designatedReplica := flag.Int64("designatedReplica", 1, "designated replica to send the requests to")
 
 	flag.Parse()
 
@@ -30,7 +31,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	cl := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *testDuration, *arrivalRate, *requestType, *operationType, *debugOn, *debugLevel, *keyLen, *valLen, *window)
+	cl := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *testDuration, *arrivalRate, *requestType, *operationType, *debugOn, *debugLevel, *keyLen, *valLen, *window, int(*designatedReplica))
 
 	cl.WaitForConnections()
 	cl.Run()

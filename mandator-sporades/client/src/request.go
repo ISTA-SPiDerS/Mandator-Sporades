@@ -39,7 +39,7 @@ func (cl *Client) handleClientResponseBatch(batch *proto.ClientBatch) {
 
 /*
 	start the poisson arrival process (put arrivals to arrivalTimeChan) in a separate thread
-	start request generation processes  (get arrivals from arrivalTimeChan and generate batches and send them) in separate threads, and send them to all replicas, and write batch to the correct array in sentRequests
+	start request generation processes
 	start the scheduler that schedules new requests
 	the thread sleeps for a duration and then starts processing the responses. This is to handle inflight responses after the test duration
 */
@@ -89,36 +89,21 @@ func (cl *Client) startRequestGenerators() {
 				}
 				cl.receivedNumMutex.Unlock()
 
-				for i, _ := range cl.replicaAddrList {
-
-					var requests_i []*proto.SingleOperation
-
-					for j := 0; j < len(requests); j++ {
-						requests_i = append(requests_i, requests[j])
-					}
-
-					// create a new client batch
-					batch := proto.ClientBatch{
-						UniqueId: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
-						Requests: requests_i,
-						Sender:   int64(cl.clientName),
-					}
-					if cl.debugOn {
-						cl.debug("Sending "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
-					}
-					rpcPair := common.RPCPair{
-						Code: cl.messageCodes.ClientBatchRpc,
-						Obj:  &batch,
-					}
-
-					cl.sendMessage(i, rpcPair)
-				}
-
+				// create a new client batch
 				batch := proto.ClientBatch{
 					UniqueId: strconv.Itoa(int(cl.clientName)) + "." + strconv.Itoa(threadNumber) + "." + strconv.Itoa(localCounter), // this is a unique string id,
 					Requests: requests,
 					Sender:   int64(cl.clientName),
 				}
+				if cl.debugOn {
+					cl.debug("Sending "+strconv.Itoa(int(cl.clientName))+"."+strconv.Itoa(threadNumber)+"."+strconv.Itoa(localCounter)+" batch size "+strconv.Itoa(len(requests)), 0)
+				}
+				rpcPair := common.RPCPair{
+					Code: cl.messageCodes.ClientBatchRpc,
+					Obj:  &batch,
+				}
+
+				cl.sendMessage(int32(cl.designatedReplica), rpcPair)
 
 				cl.numSentBatches++
 
