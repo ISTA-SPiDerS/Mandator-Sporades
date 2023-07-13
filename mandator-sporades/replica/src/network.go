@@ -18,9 +18,9 @@ import (
 */
 
 func (rp *Replica) ConnectToNode(id int32, address string, nodeType string) {
-
-	common.Debug("Connecting to "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
-
+	if rp.debugOn {
+		rp.debug("Connecting to "+strconv.Itoa(int(id)), 0)
+	}
 	var b [4]byte
 	bs := b[:4]
 
@@ -29,25 +29,25 @@ func (rp *Replica) ConnectToNode(id int32, address string, nodeType string) {
 		if err == nil {
 
 			if nodeType == "client" {
-				rp.outgoingClientWriters[rp.clientArrayIndex[id]] = bufio.NewWriter(conn)
+				rp.outgoingClientWriters[id] = bufio.NewWriter(conn)
 				binary.LittleEndian.PutUint16(bs, uint16(rp.name))
 				_, err := conn.Write(bs)
 				if err != nil {
-					common.Debug("Error while connecting to client "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
-					panic(err)
+					panic("Error while connecting to client " + err.Error())
 				}
 			} else if nodeType == "replica" {
-				rp.outgoingReplicaWriters[rp.replicaArrayIndex[id]] = bufio.NewWriter(conn)
+				rp.outgoingReplicaWriters[id] = bufio.NewWriter(conn)
 				binary.LittleEndian.PutUint16(bs, uint16(rp.name))
 				_, err := conn.Write(bs)
 				if err != nil {
-					common.Debug("Error while connecting to replica "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
-					panic(err)
+					panic("Error while connecting to replica " + err.Error())
 				}
 			} else {
 				panic("Unknown node id")
 			}
-			common.Debug("Established outgoing connection to "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				rp.debug("Established outgoing connection to "+strconv.Itoa(int(id)), 0)
+			}
 			break
 		}
 	}
@@ -76,24 +76,32 @@ func (rp *Replica) connectionListener(reader *bufio.Reader, id int32) {
 	for true {
 
 		if msgType, err = reader.ReadByte(); err != nil {
-			common.Debug("Error while reading message code: connection broken from "+strconv.Itoa(int(id))+fmt.Sprintf(" %v", err), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				rp.debug("Error while reading message code: connection broken from "+strconv.Itoa(int(id))+" "+err.Error(), 0)
+			}
 			return
 		}
 
 		if rpair, present := rp.rpcTable[msgType]; present {
 			obj := rpair.Obj.New()
 			if err = obj.Unmarshal(reader); err != nil {
-				common.Debug("Error while unmarshalling from "+strconv.Itoa(int(id))+fmt.Sprintf(" %v", err), 0, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					rp.debug("Error while unmarshalling from "+strconv.Itoa(int(id))+err.Error(), 0)
+				}
 				return
 			}
 			rp.incomingChan <- &common.RPCPair{
 				Code: msgType,
 				Obj:  obj,
 			}
-			common.Debug("Pushed a message from "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
-
+			if rp.debugOn {
+				rp.debug("Pushed a message from "+strconv.Itoa(int(id)), 0)
+			}
 		} else {
-			common.Debug("Error received unknown message type from "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				rp.debug("Error received unknown message type from "+strconv.Itoa(int(id)), 0)
+			}
+			return
 		}
 	}
 }
@@ -107,31 +115,37 @@ func (rp *Replica) WaitForConnections() {
 		var b [4]byte
 		bs := b[:4]
 		Listener, _ := net.Listen("tcp", rp.listenAddress)
-		common.Debug("Listening to incoming connection in "+rp.listenAddress, 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Listening to incoming connection in "+rp.listenAddress, 0, rp.debugLevel, rp.debugOn)
+		}
 
 		for true {
 			conn, err := Listener.Accept()
 			if err != nil {
-				common.Debug("Socket accept error", 0, rp.debugLevel, rp.debugOn)
-				panic(err)
+				panic("Socket accept error " + err.Error())
 			}
 			if _, err := io.ReadFull(conn, bs); err != nil {
-				common.Debug("Connection read error when establishing incoming connections", 0, rp.debugLevel, rp.debugOn)
-				panic(err)
+				panic("Connection read error when establishing incoming connections " + err.Error())
 			}
 			id := int32(binary.LittleEndian.Uint16(bs))
-			common.Debug("Received incoming connection from "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Received incoming connection from "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+			}
 			nodeType := rp.getNodeType(id)
 			if nodeType == "client" {
-				rp.incomingClientReaders[rp.clientArrayIndex[id]] = bufio.NewReader(conn)
-				go rp.connectionListener(rp.incomingClientReaders[rp.clientArrayIndex[id]], id)
-				common.Debug("Started listening to client "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+				rp.incomingClientReaders[id] = bufio.NewReader(conn)
+				go rp.connectionListener(rp.incomingClientReaders[id], id)
+				if rp.debugOn {
+					common.Debug("Started listening to client "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+				}
 				rp.ConnectToNode(id, rp.clientAddrList[id], "client")
 
 			} else if nodeType == "replica" {
-				rp.incomingReplicaReaders[rp.replicaArrayIndex[id]] = bufio.NewReader(conn)
-				go rp.connectionListener(rp.incomingReplicaReaders[rp.replicaArrayIndex[id]], id)
-				common.Debug("Started listening to replica "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+				rp.incomingReplicaReaders[id] = bufio.NewReader(conn)
+				go rp.connectionListener(rp.incomingReplicaReaders[id], id)
+				if rp.debugOn {
+					common.Debug("Started listening to replica "+strconv.Itoa(int(id)), 0, rp.debugLevel, rp.debugOn)
+				}
 			}
 		}
 	}()
@@ -146,39 +160,53 @@ func (rp *Replica) Run() {
 
 	for true {
 
-		common.Debug("Checking channel..", 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Checking channel..", 0, rp.debugLevel, rp.debugOn)
+		}
 		replicaMessage := <-rp.incomingChan
-		common.Debug("Received replica message", 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Received replica message", 0, rp.debugLevel, rp.debugOn)
+		}
 
 		switch replicaMessage.Code {
 
 		case rp.messageCodes.StatusRPC:
 			statusMessage := replicaMessage.Obj.(*proto.Status)
-			common.Debug("Status message from "+fmt.Sprintf("%#v", statusMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Status message from "+fmt.Sprintf("%#v", statusMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			}
 			rp.handleStatus(statusMessage)
 			break
 
 		case rp.messageCodes.ClientBatchRpc:
 			clientBatch := replicaMessage.Obj.(*proto.ClientBatch)
-			common.Debug("Client batch message from "+fmt.Sprintf("%#v", clientBatch.Sender), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Client batch message from "+fmt.Sprintf("%#v", clientBatch.Sender), 0, rp.debugLevel, rp.debugOn)
+			}
 			rp.handleClientBatch(clientBatch)
 			break
 
 		case rp.messageCodes.MemPoolRPC:
 			memPoolMessage := replicaMessage.Obj.(*proto.MemPool)
-			common.Debug("Mem pool message from "+fmt.Sprintf("%#v", memPoolMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Mem pool message from "+fmt.Sprintf("%#v", memPoolMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			}
 			rp.handleMemPool(memPoolMessage)
 			break
 
 		case rp.messageCodes.AsyncConsensus:
 			asyncConsensusMessage := replicaMessage.Obj.(*proto.AsyncConsensus)
-			common.Debug("Async consensus message from "+fmt.Sprintf("%#v", asyncConsensusMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Async consensus message from "+fmt.Sprintf("%#v", asyncConsensusMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			}
 			rp.handleAsyncConsensus(asyncConsensusMessage)
 			break
 
 		case rp.messageCodes.PaxosConsensus:
 			paxosConsensusMessage := replicaMessage.Obj.(*proto.PaxosConsensus)
-			common.Debug("Paxos consensus message from "+fmt.Sprintf("%#v", paxosConsensusMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Paxos consensus message from "+fmt.Sprintf("%#v", paxosConsensusMessage.Sender), 0, rp.debugLevel, rp.debugOn)
+			}
 			rp.handlePaxosConsensus(paxosConsensusMessage)
 			break
 
@@ -193,61 +221,87 @@ func (rp *Replica) Run() {
 func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 	peerType := rp.getNodeType(peer)
 	if peerType == "replica" {
-		// we delay the consensus message  to avoid the curse of small consensus message sizes
-		if rpcPair.Code == rp.messageCodes.AsyncConsensus || rpcPair.Code == rp.messageCodes.PaxosConsensus {
-			time.Sleep(time.Duration(rp.asyncBatchTime) * time.Millisecond)
+		if rpcPair.Code == rp.messageCodes.AsyncConsensus {
+			asyncMessage := rpcPair.Obj.(*proto.AsyncConsensus)
+			if asyncMessage.Type == 1 || asyncMessage.Type == 4 {
+				time.Sleep(time.Duration(rp.networkBatchTime) * time.Millisecond)
+			}
 		}
-		w := rp.outgoingReplicaWriters[rp.replicaArrayIndex[peer]]
+
+		if rpcPair.Code == rp.messageCodes.PaxosConsensus {
+			paxosMessage := rpcPair.Obj.(*proto.PaxosConsensus)
+			if paxosMessage.Type == 3 {
+				time.Sleep(time.Duration(rp.networkBatchTime) * time.Millisecond)
+			}
+		}
+
+		w := rp.outgoingReplicaWriters[peer]
 		if w == nil {
 			panic("replica not found")
 		}
-		rp.outgoingReplicaWriterMutexs[rp.replicaArrayIndex[peer]].Lock()
+		rp.outgoingReplicaWriterMutexs[peer].Lock()
 		err := w.WriteByte(rpcPair.Code)
 		if err != nil {
-			common.Debug("Error writing message code byte:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
-			rp.outgoingReplicaWriterMutexs[rp.replicaArrayIndex[peer]].Unlock()
+			if rp.debugOn {
+				common.Debug("Error writing message code byte:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
+			}
+			rp.outgoingReplicaWriterMutexs[peer].Unlock()
 			return
 		}
 		err = rpcPair.Obj.Marshal(w)
 		if err != nil {
-			common.Debug("Error while marshalling:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
-			rp.outgoingReplicaWriterMutexs[rp.replicaArrayIndex[peer]].Unlock()
+			if rp.debugOn {
+				common.Debug("Error while marshalling:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
+			}
+			rp.outgoingReplicaWriterMutexs[peer].Unlock()
 			return
 		}
 		err = w.Flush()
 		if err != nil {
-			common.Debug("Error while flushing:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
-			rp.outgoingReplicaWriterMutexs[rp.replicaArrayIndex[peer]].Unlock()
+			if rp.debugOn {
+				common.Debug("Error while flushing:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
+			}
+			rp.outgoingReplicaWriterMutexs[peer].Unlock()
 			return
 		}
-		rp.outgoingReplicaWriterMutexs[rp.replicaArrayIndex[peer]].Unlock()
-		common.Debug("Internal sent message to "+strconv.Itoa(int(peer)), 0, rp.debugLevel, rp.debugOn)
+		rp.outgoingReplicaWriterMutexs[peer].Unlock()
+		if rp.debugOn {
+			common.Debug("Internal sent message to "+strconv.Itoa(int(peer)), 0, rp.debugLevel, rp.debugOn)
+		}
 	} else if peerType == "client" {
-		w := rp.outgoingClientWriters[rp.clientArrayIndex[peer]]
+		w := rp.outgoingClientWriters[peer]
 		if w == nil {
 			panic("client not found")
 		}
-		rp.outgoingClientWriterMutexs[rp.clientArrayIndex[peer]].Lock()
+		rp.outgoingClientWriterMutexs[peer].Lock()
 		err := w.WriteByte(rpcPair.Code)
 		if err != nil {
-			common.Debug("Error writing message code byte:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
-			rp.outgoingClientWriterMutexs[rp.clientArrayIndex[peer]].Unlock()
+			if rp.debugOn {
+				common.Debug("Error writing message code byte:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
+			}
+			rp.outgoingClientWriterMutexs[peer].Unlock()
 			return
 		}
 		err = rpcPair.Obj.Marshal(w)
 		if err != nil {
-			common.Debug("Error while marshalling:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
-			rp.outgoingClientWriterMutexs[rp.clientArrayIndex[peer]].Unlock()
+			if rp.debugOn {
+				common.Debug("Error while marshalling:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
+			}
+			rp.outgoingClientWriterMutexs[peer].Unlock()
 			return
 		}
 		err = w.Flush()
 		if err != nil {
-			common.Debug("Error while flushing:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
-			rp.outgoingClientWriterMutexs[rp.clientArrayIndex[peer]].Unlock()
+			if rp.debugOn {
+				common.Debug("Error while flushing:"+err.Error(), 0, rp.debugLevel, rp.debugOn)
+			}
+			rp.outgoingClientWriterMutexs[peer].Unlock()
 			return
 		}
-		rp.outgoingClientWriterMutexs[rp.clientArrayIndex[peer]].Unlock()
-		common.Debug("Internal sent message to "+strconv.Itoa(int(peer)), 0, rp.debugLevel, rp.debugOn)
+		rp.outgoingClientWriterMutexs[peer].Unlock()
+		if rp.debugOn {
+			common.Debug("Internal sent message to "+strconv.Itoa(int(peer)), 0, rp.debugLevel, rp.debugOn)
+		}
 	} else {
 		panic("Unknown id from node name " + strconv.Itoa(int(peer)))
 	}
@@ -263,7 +317,9 @@ func (rp *Replica) StartOutgoingLinks() {
 			for true {
 				outgoingMessage := <-rp.outgoingMessageChan
 				rp.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
-				common.Debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), 0, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), 0, rp.debugLevel, rp.debugOn)
+				}
 			}
 		}()
 	}
@@ -278,5 +334,7 @@ func (rp *Replica) sendMessage(peer int32, rpcPair common.RPCPair) {
 		RpcPair: &rpcPair,
 		Peer:    peer,
 	}
-	common.Debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), 0, rp.debugLevel, rp.debugOn)
+	if rp.debugOn {
+		common.Debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), 0, rp.debugLevel, rp.debugOn)
+	}
 }

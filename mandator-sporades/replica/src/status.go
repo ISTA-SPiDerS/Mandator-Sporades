@@ -64,7 +64,9 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 		}
 	}
 
-	common.Debug("Sending status reply ", 0, rp.debugLevel, rp.debugOn)
+	if rp.debugOn {
+		common.Debug("Sending status reply ", 0, rp.debugLevel, rp.debugOn)
+	}
 
 	statusMessage := proto.Status{
 		Type: message.Type,
@@ -77,6 +79,8 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 	}
 
 	rp.sendMessage(int32(message.Sender), rpcPair)
-	common.Debug("Sent status ", 0, rp.debugLevel, rp.debugOn)
+	if rp.debugOn {
+		common.Debug("Sent status ", 0, rp.debugLevel, rp.debugOn)
+	}
 
 }

@@ -61,7 +61,9 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.AsyncConsensus) {
 					rp.asyncConsensus.consensusPool.Add(&newBlock)
 
 					//	broadcast <propose, new block, block commit >
-					common.Debug("broadcasting propose type 1", 0, rp.debugLevel, rp.debugOn)
+					if rp.debugOn {
+						common.Debug("broadcasting propose type 1", 0, rp.debugLevel, rp.debugOn)
+					}
 
 					for name, _ := range rp.replicaAddrList {
 
@@ -84,7 +86,9 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.AsyncConsensus) {
 						}
 
 						rp.sendMessage(name, rpcPair)
-						common.Debug("Sent propose type 1 to "+strconv.Itoa(int(name)), 0, rp.debugLevel, rp.debugOn)
+						if rp.debugOn {
+							common.Debug("Sent propose type 1 to "+strconv.Itoa(int(name)), 0, rp.debugLevel, rp.debugOn)
+						}
 					}
 				}
 
@@ -96,10 +100,14 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.AsyncConsensus) {
 				Obj:  message,
 			}
 			rp.sendMessage(rp.name, rpcPair)
-			common.Debug("Sent an internal sync vote of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent an internal sync vote of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+			}
 		}
 	} else {
-		common.Debug("Rejected a sync vote message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Rejected a sync vote message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		}
 	}
 }
 
@@ -148,7 +156,9 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.AsyncConsensus) {
 			}
 			// 	send <vote, v cur , r cur , block high > to Vcur leader
 			nextLeader := rp.getLeader(rp.asyncConsensus.rCurr+1, rp.asyncConsensus.vCurr)
-			common.Debug("Sending sync vote to "+strconv.Itoa(int(nextLeader)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sending sync vote to "+strconv.Itoa(int(nextLeader)), 0, rp.debugLevel, rp.debugOn)
+			}
 
 			voteMsg := proto.AsyncConsensus{
 				Sender:      rp.name,
@@ -169,7 +179,9 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.AsyncConsensus) {
 			}
 
 			rp.sendMessage(nextLeader, rpcPair)
-			common.Debug("Sent sync vote to "+strconv.Itoa(int(nextLeader)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent sync vote to "+strconv.Itoa(int(nextLeader)), 0, rp.debugLevel, rp.debugOn)
+			}
 
 			// start the timeout
 			rp.setViewTimer()
@@ -180,10 +192,14 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.AsyncConsensus) {
 				Obj:  message,
 			}
 			rp.sendMessage(rp.name, rpcPair)
-			common.Debug("Sent an internal sync propose of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent an internal sync propose of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+			}
 		}
 	} else {
-		common.Debug("Rejected a propose sync message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Rejected a propose sync message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		}
 	}
 }
 
@@ -220,12 +236,18 @@ func (rp *Replica) handleConsensusInternalTimeout(message *proto.AsyncConsensus)
 				}
 
 				rp.sendMessage(name, rpcPair)
-				common.Debug("Sent timeout to "+strconv.Itoa(int(name)), 4, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Sent timeout to "+strconv.Itoa(int(name)), 4, rp.debugLevel, rp.debugOn)
+				}
 			}
 		} else {
-			common.Debug("Rejected an an internal timeout notification because I am already in asycn I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Rejected an an internal timeout notification because I am already in asycn I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+			}
 		}
 	} else {
-		common.Debug("Rejected an internal timeout message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Rejected an internal timeout message because its for a previous rank of "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" where as I am in "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		}
 	}
 }

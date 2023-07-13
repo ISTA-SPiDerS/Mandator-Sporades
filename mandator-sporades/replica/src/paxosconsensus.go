@@ -68,7 +68,9 @@ func (rp *Replica) sendPrepare() {
 			}
 
 			rp.sendMessage(name, rpcPair)
-			common.Debug("Sent prepare to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent prepare to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+			}
 		}
 	} else {
 		rp.paxosConsensus.state = "A" // become an acceptor
@@ -158,7 +160,9 @@ func (rp *Replica) handlePrepare(message *proto.PaxosConsensus) {
 			}
 
 			rp.sendMessage(message.Sender, rpcPair)
-			common.Debug("Sent promise to "+strconv.Itoa(int(message.Sender)), 1, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent promise to "+strconv.Itoa(int(message.Sender)), 1, rp.debugLevel, rp.debugOn)
+			}
 
 			// set the view timer
 			rp.setPaxosViewTimer(rp.paxosConsensus.view, rp.paxosConsensus.lastDecidedLogIndex)
@@ -197,7 +201,9 @@ func (rp *Replica) handlePromise(message *proto.PaxosConsensus) {
 				}
 			}
 			rp.paxosConsensus.state = "L"
-			common.Debug("Became the leader in "+strconv.Itoa(int(rp.paxosConsensus.view))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 4, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Became the leader in "+strconv.Itoa(int(rp.paxosConsensus.view))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 4, rp.debugLevel, rp.debugOn)
+			}
 			rp.paxosConsensus.currentLeader = rp.name
 			rp.sendPropose(rp.paxosConsensus.lastDecidedLogIndex + 1)
 		}
@@ -249,7 +255,9 @@ func (rp *Replica) sendPropose(instance int32) {
 			}
 
 			rp.sendMessage(name, rpcPair)
-			common.Debug("Sent propose to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent propose to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+			}
 		}
 	}
 }
@@ -284,7 +292,9 @@ func (rp *Replica) handlePropose(message *proto.PaxosConsensus) {
 		if message.InstanceNumber > 1 {
 			// mark the previous instance as decided
 			if rp.paxosConsensus.replicatedLog[message.InstanceNumber-1].decided == false {
-				common.Debug("Decided instance "+strconv.Itoa(int(message.InstanceNumber-1)), 1, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Decided instance "+strconv.Itoa(int(message.InstanceNumber-1)), 1, rp.debugLevel, rp.debugOn)
+				}
 				rp.paxosConsensus.replicatedLog[message.InstanceNumber-1].decided = true
 				if message.DecidedValue == nil || len(message.DecidedValue) < rp.numReplicas {
 					panic("Error in the last decided values for instance " + strconv.Itoa(int(message.InstanceNumber-1)) + " " + fmt.Sprintf(" %v ", message))
@@ -317,7 +327,9 @@ func (rp *Replica) handlePropose(message *proto.PaxosConsensus) {
 		}
 
 		rp.sendMessage(message.Sender, rpcPair)
-		common.Debug("Sent accept message to "+strconv.Itoa(int(message.Sender)), 1, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Sent accept message to "+strconv.Itoa(int(message.Sender)), 1, rp.debugLevel, rp.debugOn)
+		}
 
 		// set the view timer
 		rp.setPaxosViewTimer(rp.paxosConsensus.view, rp.paxosConsensus.lastDecidedLogIndex)
@@ -346,7 +358,9 @@ func (rp *Replica) handleAccept(message *proto.PaxosConsensus) {
 				panic("Recieved n-f accepts but the decision is empty, the last accept reply is " + fmt.Sprintf(" %f ", message))
 			}
 			rp.updateLastDecidedIndex()
-			common.Debug("Decided upon receiving n-f accept message for instance "+strconv.Itoa(int(message.InstanceNumber)), 1, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Decided upon receiving n-f accept message for instance "+strconv.Itoa(int(message.InstanceNumber)), 1, rp.debugLevel, rp.debugOn)
+			}
 			rp.sendPropose(rp.paxosConsensus.lastDecidedLogIndex + 1)
 		}
 	}
@@ -357,10 +371,14 @@ func (rp *Replica) handleAccept(message *proto.PaxosConsensus) {
 */
 
 func (rp *Replica) handlePaxosInternalTimeout(message *proto.PaxosConsensus) {
-	common.Debug("Received a timeout for view "+strconv.Itoa(int(message.View))+" for the last decided index "+strconv.Itoa(int(message.InstanceNumber))+" while my view is "+strconv.Itoa(int(rp.paxosConsensus.view))+" and my last decided index is "+strconv.Itoa(int(rp.paxosConsensus.lastDecidedLogIndex))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 4, rp.debugLevel, rp.debugOn)
+	if rp.debugOn {
+		common.Debug("Received a timeout for view "+strconv.Itoa(int(message.View))+" for the last decided index "+strconv.Itoa(int(message.InstanceNumber))+" while my view is "+strconv.Itoa(int(rp.paxosConsensus.view))+" and my last decided index is "+strconv.Itoa(int(rp.paxosConsensus.lastDecidedLogIndex))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 4, rp.debugLevel, rp.debugOn)
+	}
 	// check if the view timeout is still valid
 	if rp.paxosConsensus.view == message.View && rp.paxosConsensus.lastDecidedLogIndex == message.InstanceNumber {
-		common.Debug("Accepted a timeout for view "+strconv.Itoa(int(message.View))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 4, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Accepted a timeout for view "+strconv.Itoa(int(message.View))+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 4, rp.debugLevel, rp.debugOn)
+		}
 		rp.sendPrepare()
 	}
 }
@@ -373,7 +391,9 @@ func (rp *Replica) updateLastDecidedIndex() {
 	for i := rp.paxosConsensus.lastDecidedLogIndex + 1; i < int32(len(rp.paxosConsensus.replicatedLog)); i++ {
 		if rp.paxosConsensus.replicatedLog[i].decided == true {
 			rp.paxosConsensus.lastDecidedLogIndex++
-			common.Debug("Updated last decided index "+strconv.Itoa(int(rp.paxosConsensus.lastDecidedLogIndex)), 1, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Updated last decided index "+strconv.Itoa(int(rp.paxosConsensus.lastDecidedLogIndex)), 1, rp.debugLevel, rp.debugOn)
+			}
 			if len(rp.paxosConsensus.replicatedLog[rp.paxosConsensus.lastDecidedLogIndex].decisions) < rp.numReplicas {
 				panic("Empty decision array in " + fmt.Sprintf("%v", rp.paxosConsensus.replicatedLog[rp.paxosConsensus.lastDecidedLogIndex]))
 			}

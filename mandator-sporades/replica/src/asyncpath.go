@@ -32,7 +32,9 @@ func (rp *Replica) handleConsensusTimeout(message *proto.AsyncConsensus) {
 			if len(timeouts) == rp.numReplicas/2+1 {
 				//	set is Async to true
 				rp.asyncConsensus.isAsync = true
-				common.Debug("Entering view change in view "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 4, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Entering view change in view "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 4, rp.debugLevel, rp.debugOn)
+				}
 				//	Update block high to be the block in the timeout messages with the highest rank and my own block high
 				tempBlockHigh := rp.extractHighestRankedBlockHigh(timeouts)
 				if rp.hasGreaterRank(tempBlockHigh.V, tempBlockHigh.R, rp.asyncConsensus.blockHigh.V, rp.asyncConsensus.blockHigh.R) {
@@ -79,7 +81,9 @@ func (rp *Replica) handleConsensusTimeout(message *proto.AsyncConsensus) {
 					}
 
 					rp.sendMessage(name, rpcPair)
-					common.Debug("Sent propose-async level 1 to "+strconv.Itoa(int(name)), 2, rp.debugLevel, rp.debugOn)
+					if rp.debugOn {
+						common.Debug("Sent propose-async level 1 to "+strconv.Itoa(int(name)), 2, rp.debugLevel, rp.debugOn)
+					}
 				}
 
 				rp.asyncConsensus.sentLevel2Block[message.V] = false
@@ -93,11 +97,15 @@ func (rp *Replica) handleConsensusTimeout(message *proto.AsyncConsensus) {
 					Obj:  message,
 				}
 				rp.sendMessage(rp.name, rpcPair)
-				common.Debug("Sent an internal timeout because it is for a future view change ", 2, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Sent an internal timeout because it is for a future view change ", 2, rp.debugLevel, rp.debugOn)
+				}
 			}
 		}
 	} else {
-		common.Debug("Rejected an external timeout message because I am in a higher view; my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Rejected an external timeout message because I am in a higher view; my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+		}
 	}
 }
 
@@ -133,7 +141,9 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 				}
 
 				rp.sendMessage(message.Sender, rpcPair)
-				common.Debug("Sent vote-async 5 to "+strconv.Itoa(int(message.Sender)), 2, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Sent vote-async 5 to "+strconv.Itoa(int(message.Sender)), 2, rp.debugLevel, rp.debugOn)
+				}
 
 				// if h == 2 set B fall [p] to B, and adapt level 1 block unless I have already sent level 2 block
 				if message.BlockNew.Level == 2 {
@@ -154,7 +164,9 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 					if rp.asyncConsensus.sentLevel2Block[message.V] == false {
 						level1Block := message.BlockNew.Parent
 						if level1Block != nil {
-							common.Debug("Adopted level 1 fallback block from  "+strconv.Itoa(int(message.Sender)), 2, rp.debugLevel, rp.debugOn)
+							if rp.debugOn {
+								common.Debug("Adopted level 1 fallback block from  "+strconv.Itoa(int(message.Sender)), 2, rp.debugLevel, rp.debugOn)
+							}
 							rp.asyncConsensus.consensusPool.Add(level1Block)
 							// create height 2 block and broadcast
 							newLevel2FallBackBlock := proto.AsyncConsensus_Block{
@@ -193,7 +205,9 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 								}
 
 								rp.sendMessage(name, rpcPair)
-								common.Debug("Sent adopted and extended propose-async level 2 to "+strconv.Itoa(int(name)), 2, rp.debugLevel, rp.debugOn)
+								if rp.debugOn {
+									common.Debug("Sent adopted and extended propose-async level 2 to "+strconv.Itoa(int(name)), 2, rp.debugLevel, rp.debugOn)
+								}
 							}
 							rp.asyncConsensus.sentLevel2Block[message.V] = true
 						}
@@ -208,7 +222,9 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 				Obj:  message,
 			}
 			rp.sendMessage(rp.name, rpcPair)
-			common.Debug("Sent an internal fallback propose level 1/2 block because I still haven't received n-f timeouts ", 1, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent an internal fallback propose level 1/2 block because I still haven't received n-f timeouts ", 1, rp.debugLevel, rp.debugOn)
+			}
 		}
 	} else if message.V > rp.asyncConsensus.vCurr {
 		rpcPair := common.RPCPair{
@@ -216,7 +232,9 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 			Obj:  message,
 		}
 		rp.sendMessage(rp.name, rpcPair)
-		common.Debug("Sent an internal propose async level 1/2 block because I still haven't reached the view ", 1, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Sent an internal propose async level 1/2 block because I still haven't reached the view ", 1, rp.debugLevel, rp.debugOn)
+		}
 	}
 }
 
@@ -276,7 +294,9 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.AsyncConsensus) {
 					}
 
 					rp.sendMessage(name, rpcPair)
-					common.Debug("Sent propose-async level 2 to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+					if rp.debugOn {
+						common.Debug("Sent propose-async level 2 to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+					}
 				}
 
 				rp.asyncConsensus.sentLevel2Block[rp.asyncConsensus.vCurr] = true
@@ -304,7 +324,9 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.AsyncConsensus) {
 					}
 
 					rp.sendMessage(name, rpcPair)
-					common.Debug("Sent propose-async-fallback-complete to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+					if rp.debugOn {
+						common.Debug("Sent propose-async-fallback-complete to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+					}
 				}
 			}
 		}
@@ -346,7 +368,9 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 				if leaderNode == -1 {
 					panic("Random leader returned index " + strconv.Itoa(l) + " but there is no replica with that index")
 				}
-				common.Debug("Leader node for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr))+" is "+strconv.Itoa(int(leaderNode)), 2, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Leader node for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr))+" is "+strconv.Itoa(int(leaderNode)), 2, rp.debugLevel, rp.debugOn)
+				}
 
 				//– if height 2 block by leader exists in the first n-f height 2 blocks received then
 				height2ConfirmedLeaderBlockExists := false
@@ -370,12 +394,16 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 						rp.updateSMR()
 					}
 
-					common.Debug("Updated block commit in the async path for block "+rp.asyncConsensus.blockCommit.Id, 2, rp.debugLevel, rp.debugOn)
+					if rp.debugOn {
+						common.Debug("Updated block commit in the async path for block "+rp.asyncConsensus.blockCommit.Id, 2, rp.debugLevel, rp.debugOn)
+					}
 					//	Set v cur , r cur to rank(block high)
 					rp.asyncConsensus.vCurr = rp.asyncConsensus.blockHigh.V
 					rp.asyncConsensus.rCurr = rp.asyncConsensus.blockHigh.R
 				} else {
-					common.Debug("Leader node level 2 confirmed proposal does not exist for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 2, rp.debugLevel, rp.debugOn)
+					if rp.debugOn {
+						common.Debug("Leader node level 2 confirmed proposal does not exist for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 2, rp.debugLevel, rp.debugOn)
+					}
 					//else if height 2 block from the leader exists in the Bfall
 					height2Key := strconv.Itoa(int(message.V)) + "." + strconv.Itoa(2)
 					height2Blocks, ok := rp.asyncConsensus.bFall[height2Key]
@@ -397,15 +425,21 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 							//	Set v cur , r cur to rank(block high)
 							rp.asyncConsensus.vCurr = rp.asyncConsensus.blockHigh.V
 							rp.asyncConsensus.rCurr = rp.asyncConsensus.blockHigh.R
-							common.Debug("Updated block high (not committed) in the async path for block "+rp.asyncConsensus.blockHigh.Id, 2, rp.debugLevel, rp.debugOn)
+							if rp.debugOn {
+								common.Debug("Updated block high (not committed) in the async path for block "+rp.asyncConsensus.blockHigh.Id, 2, rp.debugLevel, rp.debugOn)
+							}
 						} else {
-							common.Debug("Leader node level 2 proposal does not exists for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 2, rp.debugLevel, rp.debugOn)
+							if rp.debugOn {
+								common.Debug("Leader node level 2 proposal does not exists for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 2, rp.debugLevel, rp.debugOn)
+							}
 						}
 					}
 				}
 				//	Set v cur to v cur +1
 				rp.asyncConsensus.vCurr++
-				common.Debug("Incremented the view to "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 2, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Incremented the view to "+strconv.Itoa(int(rp.asyncConsensus.vCurr)), 2, rp.debugLevel, rp.debugOn)
+				}
 				//	Set isAsync to false
 				rp.asyncConsensus.isAsync = false
 				// send <vote, v cur , r cur , block high > to L_Vcur
@@ -431,7 +465,9 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 				}
 
 				rp.sendMessage(nextLeader, rpcPair)
-				common.Debug("Exiting view change and sending vote to "+strconv.Itoa(int(nextLeader))+" after the view change", 4, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Exiting view change and sending vote to "+strconv.Itoa(int(nextLeader))+" after the view change", 4, rp.debugLevel, rp.debugOn)
+				}
 
 				// start the timeout
 				rp.setViewTimer()
@@ -442,7 +478,9 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 				Obj:  message,
 			}
 			rp.sendMessage(rp.name, rpcPair)
-			common.Debug("Sent an internal fallback-complete because I still haven't converted to async ", 1, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent an internal fallback-complete because I still haven't converted to async ", 1, rp.debugLevel, rp.debugOn)
+			}
 		}
 	} else if message.BlockNew.V > rp.asyncConsensus.vCurr {
 		rpcPair := common.RPCPair{
@@ -450,6 +488,8 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 			Obj:  message,
 		}
 		rp.sendMessage(rp.name, rpcPair)
-		common.Debug("Sent an internal fallback-complete because I still haven't reached the view ", 1, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Sent an internal fallback-complete because I still haven't reached the view ", 1, rp.debugLevel, rp.debugOn)
+		}
 	}
 }

@@ -36,7 +36,9 @@ func (ms *MessageStore) Init(debugLevel int, debugOn bool) {
 	ms.MessageBlocks = make(map[string]MemBlock)
 	ms.debugLevel = debugLevel
 	ms.debugOn = debugOn
-	common.Debug("Initialized a new mem block message store", 0, ms.debugLevel, ms.debugOn)
+	if ms.debugOn {
+		common.Debug("Initialized a new mem block message store", 0, ms.debugLevel, ms.debugOn)
+	}
 }
 
 /*
@@ -50,7 +52,9 @@ func (ms *MessageStore) Add(block *proto.MemPool) {
 			MessageBlock: block,
 			acks:         make([]int32, 0),
 		}
-		common.Debug("Added a new block to store with id "+block.UniqueId, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			common.Debug("Added a new block to store with id "+block.UniqueId, 0, ms.debugLevel, ms.debugOn)
+		}
 	}
 
 }
@@ -62,10 +66,14 @@ func (ms *MessageStore) Add(block *proto.MemPool) {
 func (ms *MessageStore) Get(id string) (*proto.MemPool, bool) {
 	block, ok := ms.MessageBlocks[id]
 	if !ok {
-		common.Debug("Requested mem block does not exist, hence returning nil for id "+id, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			common.Debug("Requested mem block does not exist, hence returning nil for id "+id, 0, ms.debugLevel, ms.debugOn)
+		}
 		return nil, ok
 	} else {
-		common.Debug("Requested mem block exists, hence returning the block for id "+id, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			common.Debug("Requested mem block exists, hence returning the block for id "+id, 0, ms.debugLevel, ms.debugOn)
+		}
 		return block.MessageBlock, ok
 	}
 }
@@ -77,10 +85,14 @@ func (ms *MessageStore) Get(id string) (*proto.MemPool, bool) {
 func (ms *MessageStore) GetAcks(id string) []int32 {
 	block, ok := ms.MessageBlocks[id]
 	if ok {
-		common.Debug("Requested mem block exists, hence returning the acks for id "+id, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			common.Debug("Requested mem block exists, hence returning the acks for id "+id, 0, ms.debugLevel, ms.debugOn)
+		}
 		return block.acks
 	}
-	common.Debug("Requested mem block does not exist, hence returning nil acks for id "+id, 0, ms.debugLevel, ms.debugOn)
+	if ms.debugOn {
+		common.Debug("Requested mem block does not exist, hence returning nil acks for id "+id, 0, ms.debugLevel, ms.debugOn)
+	}
 	return nil
 }
 
@@ -90,7 +102,9 @@ func (ms *MessageStore) GetAcks(id string) []int32 {
 
 func (ms *MessageStore) Remove(id string) {
 	delete(ms.MessageBlocks, id)
-	common.Debug("Removed a mem block with id "+id, 0, ms.debugLevel, ms.debugOn)
+	if ms.debugOn {
+		common.Debug("Removed a mem block with id "+id, 0, ms.debugLevel, ms.debugOn)
+	}
 }
 
 /*
@@ -108,8 +122,12 @@ func (ms *MessageStore) AddAck(id string, node int32) {
 			MessageBlock: tempBlock,
 			acks:         tempAcks,
 		}
-		common.Debug("Added an ack for mem block with id "+id, 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			common.Debug("Added an ack for mem block with id "+id, 0, ms.debugLevel, ms.debugOn)
+		}
 	} else {
-		common.Debug("Adding an ack failed for mem block with id "+id+" because the mem block does not exist", 0, ms.debugLevel, ms.debugOn)
+		if ms.debugOn {
+			common.Debug("Adding an ack failed for mem block with id "+id+" because the mem block does not exist", 0, ms.debugLevel, ms.debugOn)
+		}
 	}
 }

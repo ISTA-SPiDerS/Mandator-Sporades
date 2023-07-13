@@ -70,7 +70,9 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 		if node != rp.name {
 			rp.memPool.lastCompletedRounds[rp.replicaArrayIndex[node]] = sequence
 		}
-		common.Debug("Last Completed Rounds is "+fmt.Sprintf("%v", rp.memPool.lastCompletedRounds), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Last Completed Rounds is "+fmt.Sprintf("%v", rp.memPool.lastCompletedRounds), 0, rp.debugLevel, rp.debugOn)
+		}
 		// send Mem-Pool-Mem-Block-Ack 2 to the sender
 		memPoolAck := proto.MemPool{
 			Sender:        rp.name,
@@ -87,7 +89,9 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 		}
 
 		rp.sendMessage(message.Sender, rpcPair)
-		common.Debug("Sent Mem Pool Ack message with type 2 to "+strconv.Itoa(int(message.Sender)), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Sent Mem Pool Ack message with type 2 to "+strconv.Itoa(int(message.Sender)), 0, rp.debugLevel, rp.debugOn)
+		}
 
 	} else if message.Type == 2 {
 		// Mem-Pool-Mem-Block-Ack 2
@@ -107,7 +111,9 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 			if acks != nil && len(acks) == len(rp.replicaAddrList)/2+1 {
 				rp.memPool.awaitingAcks = false
 				rp.memPool.lastCompletedRounds[rp.replicaArrayIndex[rp.name]]++
-				common.Debug("Received n-f acks for the block "+message.UniqueId, 0, rp.debugLevel, rp.debugOn)
+				if rp.debugOn {
+					common.Debug("Received n-f acks for the block "+message.UniqueId, 0, rp.debugLevel, rp.debugOn)
+				}
 				// for testing purposes of the mem pool, send a dummy response to the client
 				//rp.sendDummyResponse(message.UniqueId)
 			}
@@ -134,14 +140,18 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 			}
 
 			rp.sendMessage(message.Sender, rpcPair)
-			common.Debug("Sent Mem Pool response message with type 4 to "+strconv.Itoa(int(message.Sender)), 0, rp.debugLevel, rp.debugOn)
+			if rp.debugOn {
+				common.Debug("Sent Mem Pool response message with type 4 to "+strconv.Itoa(int(message.Sender)), 0, rp.debugLevel, rp.debugOn)
+			}
 		}
 
 	} else if message.Type == 4 {
 		// Mem-Pool-Mem-Block-Response 4
 		// save the block in the store
 		rp.memPool.blockMap.Add(message)
-		common.Debug("Saved a mem block as an explicit response from "+strconv.Itoa(int(message.Sender)), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Saved a mem block as an explicit response from "+strconv.Itoa(int(message.Sender)), 0, rp.debugLevel, rp.debugOn)
+		}
 	}
 
 }
@@ -156,7 +166,9 @@ func (rp *Replica) createNewMemBlock() {
 	if (len(rp.memPool.incomingBuffer) > rp.replicaBatchSize || (time.Now().Sub(rp.memPool.lastTimeBlockCreated).Microseconds() > int64(rp.replicaBatchTime) &&
 		len(rp.memPool.incomingBuffer) > 0)) && rp.memPool.awaitingAcks == false {
 
-		common.Debug("Creating a new mem block with  "+strconv.Itoa(len(rp.memPool.incomingBuffer))+" client batches", 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Creating a new mem block with  "+strconv.Itoa(len(rp.memPool.incomingBuffer))+" client batches", 0, rp.debugLevel, rp.debugOn)
+		}
 
 		// create a new Mem block
 		bParentId := strconv.Itoa(int(rp.name)) + "." + strconv.Itoa(rp.memPool.indexCounter-1) // because we always increase the index counter upon creating a new block
@@ -240,7 +252,9 @@ func (rp *Replica) sendMemBlockToEveryone(m *proto.MemPool, replicas []int32) {
 		_, sequence := common.ExtractSequenceNumber(m.UniqueId)
 		rp.memPool.lastSentBlock[rp.replicaArrayIndex[replica]] = sequence
 
-		common.Debug("Sent Mem Pool message with type 1 to "+strconv.Itoa(int(replica)), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Sent Mem Pool message with type 1 to "+strconv.Itoa(int(replica)), 0, rp.debugLevel, rp.debugOn)
+		}
 	}
 }
 
@@ -267,7 +281,9 @@ func (rp *Replica) sendBlockToBestMajority(m *proto.MemPool, replicas []int32) {
 		}
 	}
 	if len(replicas) != len(healthyReplicas) {
-		common.Debug("Selected a healthy replica set when threshold is "+strconv.Itoa(int(threshold))+" and the replicas are "+fmt.Sprintf("%v", healthyReplicas), 0, rp.debugLevel, rp.debugOn)
+		if rp.debugOn {
+			common.Debug("Selected a healthy replica set when threshold is "+strconv.Itoa(int(threshold))+" and the replicas are "+fmt.Sprintf("%v", healthyReplicas), 0, rp.debugLevel, rp.debugOn)
+		}
 	}
 	rp.sendMemBlockToEveryone(m, healthyReplicas)
 }
@@ -328,7 +344,9 @@ func (rp *Replica) sendExternalMemBlockRequest(id string) {
 	}
 
 	rp.sendMessage(randomReplica, rpcPair)
-	common.Debug("Sent Mem Pool Mem block request message with type 3 to "+strconv.Itoa(int(randomReplica)), 0, rp.debugLevel, rp.debugOn)
+	if rp.debugOn {
+		common.Debug("Sent Mem Pool Mem block request message with type 3 to "+strconv.Itoa(int(randomReplica)), 0, rp.debugLevel, rp.debugOn)
+	}
 }
 
 // handler for new client batches
