@@ -24,7 +24,7 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 	} else if message.Type == 2 {
 		if rp.logPrinted == false {
 			rp.logPrinted = true
-			fmt.Printf(fmt.Sprintf("Last completed Mem Blocks %v\n", rp.memPool.lastCompletedRounds))
+
 			// empty the incoming channel
 			go func() {
 				for true {
@@ -33,12 +33,8 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 			}()
 			rp.printLogMemPool() // this is for the mem pool testing purposes
 			if rp.consAlgo == "async" {
-				fmt.Printf(fmt.Sprintf("last committed consensus block %v at time %v\n", rp.asyncConsensus.lastCommittedBlock, rp.asyncConsensus.lastCommittedTime.Sub(rp.asyncConsensus.startTime)))
 				rp.printLogConsensus() // this is for consensus testing purposes
 			} else if rp.consAlgo == "paxos" {
-				fmt.Printf(fmt.Sprintf("last committed consensus instance %v at time %v\n", rp.paxosConsensus.lastCommittedLogIndex, rp.paxosConsensus.lastCommittedTime.Sub(rp.paxosConsensus.startTime)))
-				fmt.Printf(fmt.Sprintf("last decided consensus instance %v\n", rp.paxosConsensus.lastDecidedLogIndex))
-				fmt.Printf(fmt.Sprintf("View %v \n", rp.paxosConsensus.view))
 				rp.printPaxosLogConsensus() // this is for consensus testing purposes
 			}
 
@@ -51,13 +47,7 @@ func (rp *Replica) handleStatus(message *proto.Status) {
 			} else if rp.consAlgo == "paxos" {
 				rp.paxosConsensus.startTime = time.Now()
 				rp.paxosConsensus.lastCommittedTime = time.Now()
-				initLeader := rp.name
-				for name, index := range rp.replicaArrayIndex {
-					if index == 0 {
-						initLeader = name
-					}
-				}
-				if rp.name == initLeader {
+				if rp.name == 1 {
 					rp.sendPrepare()
 				}
 			}
