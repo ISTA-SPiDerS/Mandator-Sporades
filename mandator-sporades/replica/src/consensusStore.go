@@ -47,9 +47,15 @@ func (ms *AsyncConsensusStore) Init(debugLevel int, debugOn bool) {
 */
 
 func (ms *AsyncConsensusStore) Add(block *proto.AsyncConsensus_Block) {
-	if block.R > 2 && block.Parent == nil {
-		panic("Error Nil parent found in " + fmt.Sprintf("%v", block))
+
+	if block.Parent != nil {
+		ms.Add(block.Parent)
+		if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil {
+			block.Parent.Parent.Parent.Parent = nil
+		}
+
 	}
+
 	_, ok := ms.ConsensusBlocks[block.Id]
 	if !ok {
 		ms.ConsensusBlocks[block.Id] = AsynConsensusBlock{
@@ -57,7 +63,7 @@ func (ms *AsyncConsensusStore) Add(block *proto.AsyncConsensus_Block) {
 			acks:           make([]int32, 0),
 		}
 		if ms.debugOn {
-			common.Debug("Added a new consensus block to consensus store with  "+fmt.Sprintf("%v", block.Id), 0, ms.debugLevel, ms.debugOn)
+			common.Debug("Added a new consensus block to consensus store with  "+fmt.Sprintf("%v", block), -1, ms.debugLevel, ms.debugOn)
 		}
 	}
 }
@@ -77,9 +83,7 @@ func (ms *AsyncConsensusStore) Get(id string) (*proto.AsyncConsensus_Block, bool
 		if ms.debugOn {
 			common.Debug("Requested consensus block exists, hence returning the block for id "+id, 0, ms.debugLevel, ms.debugOn)
 		}
-		if block.ConsensusBlock.R > 2 && block.ConsensusBlock.Parent == nil {
-			panic("Error Nil parent found in " + fmt.Sprintf("%v", block.ConsensusBlock))
-		}
+
 		return block.ConsensusBlock, ok
 	}
 }
@@ -131,8 +135,9 @@ func (ms *AsyncConsensusStore) AddAck(id string, node int32) {
 		if ms.debugOn {
 			common.Debug("Added an ack for consensus block with id "+id, 0, ms.debugLevel, ms.debugOn)
 		}
-	}
-	if ms.debugOn {
-		common.Debug("Adding an ack failed for consensus block with id "+id+" because the consensus block does not exist", 0, ms.debugLevel, ms.debugOn)
+	} else {
+		if ms.debugOn {
+			common.Debug("Adding an ack failed for consensus block with id "+id+" because the consensus block does not exist", 0, ms.debugLevel, ms.debugOn)
+		}
 	}
 }

@@ -108,7 +108,7 @@ func (ms *MessageStore) Remove(id string) {
 }
 
 /*
-	add a new ack to the acks of a block
+	add a new ack to the acks of a given block
 */
 
 func (ms *MessageStore) AddAck(id string, node int32) {

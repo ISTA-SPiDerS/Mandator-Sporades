@@ -61,6 +61,7 @@ func (ms *AsyncConsensusStore) Add(block *proto.Pipelined_Sporades_Block) {
 
 	if block.Parent != nil {
 		ms.Add(block.Parent)
+		block.Parent = nil
 	}
 
 	_, ok := ms.ConsensusBlocks[block.Id]
