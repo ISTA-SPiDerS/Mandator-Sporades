@@ -8,6 +8,17 @@ import (
 	"time"
 )
 
+// checks if the sender is in the set of messages
+
+func (rp *Replica) senderInMessages(messages []*proto.AsyncConsensus, sender int32) bool {
+	for i := 0; i < len(messages); i++ {
+		if messages[i].Sender == sender {
+			return true
+		}
+	}
+	return false
+}
+
 /*
 	Handler for sync consensus vote messages
 */
@@ -20,12 +31,15 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.AsyncConsensus) {
 			key := strconv.Itoa(int(message.V)) + "." + strconv.Itoa(int(message.R))
 			//	if vote replies already has v.r key, then append to existing array, else create a new entry
 			_, ok := rp.asyncConsensus.voteReplies[key]
-			if ok {
-				rp.asyncConsensus.voteReplies[key] = append(rp.asyncConsensus.voteReplies[key], message)
-			} else {
+			if !ok {
 				rp.asyncConsensus.voteReplies[key] = make([]*proto.AsyncConsensus, 0)
-				rp.asyncConsensus.voteReplies[key] = append(rp.asyncConsensus.voteReplies[key], message)
 			}
+
+			if rp.senderInMessages(rp.asyncConsensus.voteReplies[key], message.Sender) {
+				return
+			}
+
+			rp.asyncConsensus.voteReplies[key] = append(rp.asyncConsensus.voteReplies[key], message)
 			//	if for this v,r the array vote replies has n-f blocks
 			votes, _ := rp.asyncConsensus.voteReplies[key]
 			if len(votes) == rp.numReplicas/2+1 {
@@ -45,7 +59,7 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.AsyncConsensus) {
 				rp.asyncConsensus.vCurr = message.V
 				rp.asyncConsensus.rCurr = message.R
 				//	if I am the leader of Vcur
-				if rp.getLeader(rp.asyncConsensus.rCurr+1, rp.asyncConsensus.vCurr) == rp.name {
+				if rp.getLeader(rp.asyncConsensus.vCurr) == rp.name {
 					//	Form a new block B=(cmnds, v cur , r cur +1 , block high)
 					newBlock := proto.AsyncConsensus_Block{
 						// creator_name.v.r.type.level. type can be r (regular) or f (fallback), level can be 1,2 or -1 (for regular blocks)
@@ -94,14 +108,16 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.AsyncConsensus) {
 
 			}
 		} else {
-			// process later
-			rpcPair := common.RPCPair{
-				Code: rp.messageCodes.AsyncConsensus,
-				Obj:  message,
-			}
-			rp.sendMessage(rp.name, rpcPair)
-			if rp.debugOn {
-				common.Debug("Sent an internal sync vote of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+
+			if message.V > rp.asyncConsensus.vCurr { // process later
+				rpcPair := common.RPCPair{
+					Code: rp.messageCodes.AsyncConsensus,
+					Obj:  message,
+				}
+				rp.sendMessage(rp.name, rpcPair)
+				if rp.debugOn {
+					common.Debug("Sent an internal sync vote of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+				}
 			}
 		}
 	} else {
@@ -155,7 +171,7 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.AsyncConsensus) {
 				rp.updateSMR()
 			}
 			// 	send <vote, v cur , r cur , block high > to Vcur leader
-			nextLeader := rp.getLeader(rp.asyncConsensus.rCurr+1, rp.asyncConsensus.vCurr)
+			nextLeader := rp.getLeader(rp.asyncConsensus.vCurr)
 			if rp.debugOn {
 				common.Debug("Sending sync vote to "+strconv.Itoa(int(nextLeader)), 0, rp.debugLevel, rp.debugOn)
 			}
@@ -186,14 +202,16 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.AsyncConsensus) {
 			// start the timeout
 			rp.setViewTimer()
 		} else {
-			// process later
-			rpcPair := common.RPCPair{
-				Code: rp.messageCodes.AsyncConsensus,
-				Obj:  message,
-			}
-			rp.sendMessage(rp.name, rpcPair)
-			if rp.debugOn {
-				common.Debug("Sent an internal sync propose of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+			if message.V > rp.asyncConsensus.vCurr {
+				// process later
+				rpcPair := common.RPCPair{
+					Code: rp.messageCodes.AsyncConsensus,
+					Obj:  message,
+				}
+				rp.sendMessage(rp.name, rpcPair)
+				if rp.debugOn {
+					common.Debug("Sent an internal sync propose of rank "+fmt.Sprintf("view: %v, round: %v", message.V, message.R)+" because I still haven't changed my mode to sync and my rank is "+fmt.Sprintf("view: %v, round: %v", rp.asyncConsensus.vCurr, rp.asyncConsensus.rCurr)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 0, rp.debugLevel, rp.debugOn)
+				}
 			}
 		}
 	} else {
