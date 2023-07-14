@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mandator-sporades/common"
 	"mandator-sporades/proto"
-	"math/rand"
 	"strconv"
 	"time"
 )
@@ -15,20 +14,7 @@ import (
 
 func (rp *Replica) sendPrepare() {
 
-	replicaId := -1
-
-	for name, index := range rp.replicaArrayIndex {
-		if rp.name == name {
-			replicaId = index
-			break
-		}
-	}
-
-	if replicaId == -1 {
-		panic("replica id not found")
-	}
-
-	if (rp.paxosConsensus.view+1)%int32(rp.numReplicas) == int32(replicaId) || rp.paxosConsensus.view == 0 || rand.Intn(5) == 1 {
+	if true {
 
 		rp.createInstanceIfMissing(int(rp.paxosConsensus.lastDecidedLogIndex + 1))
 
@@ -179,12 +165,10 @@ func (rp *Replica) handlePromise(message *proto.PaxosConsensus) {
 	if message.PromiseBallot == rp.paxosConsensus.lastPreparedBallot && message.View == rp.paxosConsensus.view && rp.paxosConsensus.state == "C" {
 		// save the promise message
 		_, ok := rp.paxosConsensus.promiseResponses[message.View]
-		if ok {
-			rp.paxosConsensus.promiseResponses[message.View] = append(rp.paxosConsensus.promiseResponses[message.View], message)
-		} else {
+		if !ok {
 			rp.paxosConsensus.promiseResponses[message.View] = make([]*proto.PaxosConsensus, 0)
-			rp.paxosConsensus.promiseResponses[message.View] = append(rp.paxosConsensus.promiseResponses[message.View], message)
 		}
+		rp.paxosConsensus.promiseResponses[message.View] = append(rp.paxosConsensus.promiseResponses[message.View], message)
 
 		if len(rp.paxosConsensus.promiseResponses[message.View]) == rp.numReplicas/2+1 {
 			// we have majority promise messages for the same view,
@@ -355,7 +339,7 @@ func (rp *Replica) handleAccept(message *proto.PaxosConsensus) {
 			rp.paxosConsensus.replicatedLog[message.InstanceNumber].decided = true
 			rp.paxosConsensus.replicatedLog[message.InstanceNumber].decisions = message.ProposeValue
 			if rp.paxosConsensus.replicatedLog[message.InstanceNumber].decisions == nil || len(rp.paxosConsensus.replicatedLog[message.InstanceNumber].decisions) < rp.numReplicas {
-				panic("Recieved n-f accepts but the decision is empty, the last accept reply is " + fmt.Sprintf(" %f ", message))
+				panic("Received n-f accepts but the decision is empty, the last accept reply is " + fmt.Sprintf(" %f ", message))
 			}
 			rp.updateLastDecidedIndex()
 			if rp.debugOn {
