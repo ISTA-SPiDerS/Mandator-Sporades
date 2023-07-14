@@ -16,14 +16,16 @@ func main() {
 	batchSize := flag.Int("batchSize", 50, "batch size")
 	batchTime := flag.Int("batchTime", 5000, "maximum time to wait for collecting a batch of requests in micro seconds")
 	debugOn := flag.Bool("debugOn", false, "false or true")
+	isAsync := flag.Bool("isAsync", false, "false or true for simulating asynchrony")
 	mode := flag.Int("mode", 2, "1 for all to all broadcast, and 2 for selective broadcast")
 	debugLevel := flag.Int("debugLevel", 0, "debug level")
-	viewTimeout := flag.Int("viewTimeout", 2000000, "view timeout in micro seconds")
+	viewTimeout := flag.Int("viewTimeout", 20000000, "view timeout in micro seconds")
 	window := flag.Int("window", 10, "window for abortable broadcast")
-	asyncBatchTime := flag.Int("asyncBatchTime", 10, "async batch time in ms")
+	networkBatchTime := flag.Int("networkBatchTime", 3, "network batch time in ms")
 	keyLen := flag.Int("keyLen", 8, "key length")
 	valLen := flag.Int("valLen", 8, "value length")
 	benchmarkMode := flag.Int("benchmarkMode", 0, "0: resident store, 1: redis")
+	asyncSimTime := flag.Int("asyncSimTime", 0, "in ms")
 
 	flag.Parse()
 
@@ -33,7 +35,7 @@ func main() {
 		panic(err)
 	}
 
-	rp := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *debugOn, *mode, *debugLevel, *viewTimeout, *window, *asyncBatchTime, *consAlgo, *benchmarkMode, *keyLen, *valLen)
+	rp := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *debugOn, *mode, *debugLevel, *viewTimeout, *window, *networkBatchTime, *consAlgo, *benchmarkMode, *keyLen, *valLen, *isAsync, *asyncSimTime)
 
 	rp.WaitForConnections()
 	rp.StartOutgoingLinks()
