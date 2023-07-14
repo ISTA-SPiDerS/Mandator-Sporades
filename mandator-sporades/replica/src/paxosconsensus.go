@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mandator-sporades/common"
 	"mandator-sporades/proto"
+	"math/rand"
 	"strconv"
 	"time"
 )
@@ -214,6 +215,14 @@ func (rp *Replica) sendPropose(instance int32) {
 		if instance > 1 && (rp.paxosConsensus.replicatedLog[instance-1].decisions == nil || len(rp.paxosConsensus.replicatedLog[instance-1].decisions) < rp.numReplicas) {
 			panic("proposing when the last decided index does not have decisions")
 		}
+
+		if rp.isAsync {
+			n := rand.Intn(rp.numReplicas) + 1
+			if int32(n) == rp.name {
+				time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
+			}
+		}
+
 		// send a propose message
 		for name, _ := range rp.replicaAddrList {
 			proposeMsg := proto.PaxosConsensus{

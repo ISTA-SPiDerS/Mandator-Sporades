@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mandator-sporades/common"
 	"mandator-sporades/proto"
+	"math/rand"
 	"strconv"
 	"time"
 )
@@ -77,6 +78,13 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.AsyncConsensus) {
 					//	broadcast <propose, new block, block commit >
 					if rp.debugOn {
 						common.Debug("broadcasting propose type 1", 0, rp.debugLevel, rp.debugOn)
+					}
+
+					if rp.isAsync {
+						n := rand.Intn(rp.numReplicas) + 1
+						if int32(n) == rp.name {
+							time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
+						}
 					}
 
 					for name, _ := range rp.replicaAddrList {
