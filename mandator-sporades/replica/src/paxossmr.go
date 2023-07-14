@@ -32,7 +32,7 @@ func (rp *Replica) updatePaxosSMR() {
 				// for each mem block in the range startMemPoolCounter to lastMemPoolCounter check if the block exists, if not send an external mem pool request.
 				// if anything is missing, mark the ready to commit as false
 				for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
-					memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
+					memPoolName := strconv.Itoa(j+1) + "." + strconv.Itoa(k)
 					_, ok := rp.memPool.blockMap.Get(memPoolName)
 					if !ok {
 						if rp.debugOn {
@@ -54,8 +54,6 @@ func (rp *Replica) updatePaxosSMR() {
 			nextMemBlockLogPositionsToCommit := nextInstanceToCommit.decisions
 			if rp.debugOn {
 				common.Debug("Mem block indexes of the new instance "+strconv.Itoa(int(i))+" is "+fmt.Sprintf("%v", nextMemBlockLogPositionsToCommit), 0, rp.debugLevel, rp.debugOn)
-			}
-			if rp.debugOn {
 				common.Debug("Mem block indexes of the last committed consensus block "+strconv.Itoa(int(rp.paxosConsensus.lastCommittedLogIndex))+"is "+fmt.Sprintf("%v", rp.paxosConsensus.lastCommittedRounds), 0, rp.debugLevel, rp.debugOn)
 			}
 			// for each log position in nextMemBlockLogPositionsToCommit that corresponds to different replicas, check if the index is greater than the last committed index
@@ -66,7 +64,7 @@ func (rp *Replica) updatePaxosSMR() {
 					lastMemPoolCounter := int(nextMemBlockLogPositionsToCommit[j])
 
 					for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
-						memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
+						memPoolName := strconv.Itoa(j+1) + "." + strconv.Itoa(k)
 						memBlock, _ := rp.memPool.blockMap.Get(memPoolName)
 						memPoolClientResponse := rp.updateApplicationLogic(memBlock)
 						if rp.debugOn {
