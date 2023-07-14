@@ -2,14 +2,14 @@ arrivalRate=$1
 viewTimeoutTime=$2
 batchTime=$3
 batchSize=$4
-networkBatchTime=$6
-asyncSimTime=$7
-consAlgo=$8
-mode=$9
+networkBatchTime=$5
+asyncSimTime=$6
+consAlgo=$7
+mode=$8
 
 replica_path="replica/bin/replica"
 ctl_path="client/bin/client"
-output_path="logs/arrival=${arrivalRate}/viewtimeout=${viewTimeoutTime}/batchtime=${batchTime}/batchsize=${batchSize}/pipeline=${pipelineLength}/networkbatchTime=${networkbatchTime}/asyncSimTimeout=${asyncSimTimeout}/"
+output_path="logs/arrival=${arrivalRate}/viewtimeout=${viewTimeoutTime}/batchtime=${batchTime}/batchsize=${batchSize}/networkBatchTime=${networkBatchTime}/asyncSimTime=${asyncSimTime}/algo=${consAlgo}/mode=${mode}/"
 
 rm -r ${output_path}
 mkdir -p ${output_path}
