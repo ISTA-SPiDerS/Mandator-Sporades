@@ -15,9 +15,7 @@ for i in range(1, len(sys.argv)):
         numberOfRequests = numberOfRequests + 1
 
     files.append(dict)
-    print("Length of " + sys.argv[i] + " is " + str(numberOfRequests))
-    print("Approximate throughput " + str(
-        numberOfRequests / 60.0) + "requests per second")  # assuming a test duration of 60s
+
 
 def checkMaps(files):
     misMatch = 0
@@ -41,6 +39,11 @@ def checkMaps(files):
 
     print(str(match) + " entries match")
     print(str(misMatch) + " entries miss match")
+
+    if misMatch == 0:
+        print("---TEST PASS---")
+    else:
+        print("---TEST FAILED---")
 
 
 checkMaps(files)

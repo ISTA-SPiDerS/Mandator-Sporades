@@ -82,7 +82,7 @@ func (rp *Replica) updatePaxosSMR() {
 				}
 			}
 			if rp.debugOn {
-				common.Debug("Committed paxos consensus instance "+"."+strconv.Itoa(int(i))+" with mem pool indexes "+fmt.Sprintf("%v", nextInstanceToCommit.decisions)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 5, rp.debugLevel, rp.debugOn)
+				common.Debug("Committed paxos consensus instance "+"."+strconv.Itoa(int(i))+" with mem pool indexes "+fmt.Sprintf("%v", nextInstanceToCommit.decisions)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 12, rp.debugLevel, rp.debugOn)
 			}
 			rp.paxosConsensus.lastCommittedLogIndex = i
 			rp.paxosConsensus.lastCommittedTime = time.Now()
