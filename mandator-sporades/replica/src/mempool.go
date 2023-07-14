@@ -390,3 +390,26 @@ func (rp *Replica) printLogMemPool() {
 	}
 
 }
+
+/*
+	send back the client response batches
+*/
+
+func (rp *Replica) sendMemPoolClientResponse(memPoolBlock *proto.MemPool) {
+	clientBatches := memPoolBlock.ClientBatches
+	for i := 0; i < len(clientBatches); i++ {
+		// send the response back to the client
+		resClientBatch := proto.ClientBatch{
+			UniqueId: clientBatches[i].UniqueId,
+			Requests: clientBatches[i].Requests,
+			Sender:   clientBatches[i].Sender,
+		}
+
+		rpcPair := common.RPCPair{
+			Code: rp.messageCodes.ClientBatchRpc,
+			Obj:  &resClientBatch,
+		}
+
+		rp.sendMessage(int32(resClientBatch.Sender), rpcPair)
+	}
+}

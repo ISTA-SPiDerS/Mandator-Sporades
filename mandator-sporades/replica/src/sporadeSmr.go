@@ -80,7 +80,7 @@ func (rp *Replica) updateSMR() {
 				// for each mem block in the range startMemPoolCounter to lastMemPoolCounter check if the block exists, if not send an external mem pool request.
 				// if anything is missing, mark the ready to commit as false
 				for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
-					memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
+					memPoolName := strconv.Itoa(j+1) + "." + strconv.Itoa(k)
 					_, ok := rp.memPool.blockMap.Get(memPoolName)
 					if !ok {
 						if rp.debugOn {
@@ -102,8 +102,6 @@ func (rp *Replica) updateSMR() {
 			nextMemBlockLogPositionsToCommit := nextBlockToCommit.Commands
 			if rp.debugOn {
 				common.Debug("Mem block indexes of the new consensus block "+nextBlockToCommit.Id+" is "+fmt.Sprintf("%v", nextMemBlockLogPositionsToCommit), 0, rp.debugLevel, rp.debugOn)
-			}
-			if rp.debugOn {
 				common.Debug("Mem block indexes of the last committed consensus block "+rp.asyncConsensus.lastCommittedBlock.Id+"is "+fmt.Sprintf("%v", rp.asyncConsensus.lastCommittedRounds), 0, rp.debugLevel, rp.debugOn)
 			}
 			// for each log position in nextMemBlockLogPositionsToCommit that corresponds to different replicas, check if the index is greater than the last committed index
@@ -114,7 +112,7 @@ func (rp *Replica) updateSMR() {
 					lastMemPoolCounter := int(nextMemBlockLogPositionsToCommit[j])
 
 					for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
-						memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
+						memPoolName := strconv.Itoa(j+1) + "." + strconv.Itoa(k)
 						memBlock, _ := rp.memPool.blockMap.Get(memPoolName)
 						memPoolClientResponse := rp.updateApplicationLogic(memBlock)
 						if rp.debugOn {
@@ -143,41 +141,9 @@ func (rp *Replica) updateSMR() {
 }
 
 /*
-	A helper function to get the int32 name, given the replica index
-*/
-
-func (rp *Replica) getReplicaName(replicaIndex int) int32 {
-	for name, index := range rp.replicaArrayIndex {
-		if replicaIndex == index {
-			return name
-		}
-	}
-	panic("The replica for index " + strconv.Itoa(replicaIndex) + " not found")
-}
-
-/*
 	A generic application handler for processing a mini block, and forming the mini block response
 */
 
 func (rp *Replica) updateApplicationLogic(memBlock *proto.MemPool) *proto.MemPool {
 	return rp.state.Execute(memBlock)
-}
-
-func (rp *Replica) sendMemPoolClientResponse(memPoolBlock *proto.MemPool) {
-	clientBatches := memPoolBlock.ClientBatches
-	for i := 0; i < len(clientBatches); i++ {
-		// send the response back to the client
-		resClientBatch := proto.ClientBatch{
-			UniqueId: clientBatches[i].UniqueId,
-			Requests: clientBatches[i].Requests,
-			Sender:   clientBatches[i].Sender,
-		}
-
-		rpcPair := common.RPCPair{
-			Code: rp.messageCodes.ClientBatchRpc,
-			Obj:  &resClientBatch,
-		}
-
-		rp.sendMessage(int32(resClientBatch.Sender), rpcPair)
-	}
 }
