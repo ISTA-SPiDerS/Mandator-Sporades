@@ -5,6 +5,7 @@ import (
 	"log"
 	"mandator-sporades/common"
 	"mandator-sporades/proto"
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -156,14 +157,7 @@ func (rp *Replica) createInstanceIfMissing(instanceNum int) {
 */
 
 func (rp *Replica) handlePaxosConsensus(message *proto.PaxosConsensus) {
-	debugLevel := 0
-
-	if time.Now().Sub(rp.paxosConsensus.lastCommittedTime).Seconds() > float64(rp.viewTimeout) {
-		// haven't committed anything in the last 5 seconds
-		debugLevel = 4
-	} else {
-		debugLevel = 0
-	}
+	debugLevel := rp.debugLevel
 
 	if message.Type == 1 {
 		if rp.debugOn {
@@ -207,14 +201,14 @@ func (rp *Replica) handlePaxosConsensus(message *proto.PaxosConsensus) {
 }
 
 /*
-	Sets a timer, which once timeout will send an internal notification for a prepare message after another random wait to break the ties
+	set a timer, which once timeout will send an internal notification for a prepare message after another random wait to break the ties
 */
 
 func (rp *Replica) setPaxosViewTimer(view int32, lastDecidedIndex int32) {
+	rand.Seed(time.Now().UnixMilli() + int64(rp.name))
+	rp.paxosConsensus.viewTimer = common.NewTimerWithCancel(time.Duration(rp.viewTimeout+rand.Intn(rp.viewTimeout/2)) * time.Microsecond)
 
-	rp.paxosConsensus.viewTimer = common.NewTimerWithCancel(time.Duration(rp.viewTimeout) * time.Microsecond)
-
-	rp.paxosConsensus.viewTimer.SetTimeoutFuntion(func() {
+	rp.paxosConsensus.viewTimer.SetTimeoutFunction(func() {
 
 		// this function runs in a separate thread, hence we do not send prepare message in this function, instead send a timeout-internal signal
 		internalTimeoutNotification := proto.PaxosConsensus{
@@ -276,14 +270,14 @@ func (rp *Replica) printPaxosLogConsensus() {
 				lastMemPoolCounter := int(nextMemBlockLogPositionsToCommit[j])
 
 				for k := startMemPoolCounter; k <= lastMemPoolCounter; k++ {
-					memPoolName := strconv.Itoa(int(rp.getReplicaName(j))) + "." + strconv.Itoa(k)
+					memPoolName := strconv.Itoa(j+1) + "." + strconv.Itoa(k)
 					memBlock, _ := rp.memPool.blockMap.Get(memPoolName)
 					for clientBatchIndex := 0; clientBatchIndex < len(memBlock.ClientBatches); clientBatchIndex++ {
 						clientBatch := memBlock.ClientBatches[clientBatchIndex]
 						clientBatchCommands := clientBatch.Requests
 						for clientRequestIndex := 0; clientRequestIndex < len(clientBatchCommands); clientRequestIndex++ {
-							clientRequestID := clientBatchCommands[clientRequestIndex].Command
-							_, _ = f.WriteString(strconv.Itoa(int(i)) + "-" + memPoolName + "-" + strconv.Itoa(int(clientBatchIndex)) + "-" + strconv.Itoa(int(clientRequestIndex)) + ":" + clientRequestID + "\n")
+							clientRequest := clientBatchCommands[clientRequestIndex].Command
+							_, _ = f.WriteString(strconv.Itoa(int(i)) + "-" + memPoolName + "-" + strconv.Itoa(int(clientBatchIndex)) + "-" + strconv.Itoa(int(clientRequestIndex)) + ":" + clientRequest + "\n")
 						}
 					}
 
