@@ -18,13 +18,16 @@ func (rp *Replica) handleConsensusTimeout(message *proto.AsyncConsensus) {
 	if message.V >= rp.asyncConsensus.vCurr {
 		if rp.asyncConsensus.isAsync == false {
 			//  save the timeout message in the timeoutMessages
-			timeoutMessages, ok := rp.asyncConsensus.timeoutMessages[message.V]
-			if ok {
-				rp.asyncConsensus.timeoutMessages[message.V] = append(timeoutMessages, message)
-			} else {
+			_, ok := rp.asyncConsensus.timeoutMessages[message.V]
+			if !ok {
 				rp.asyncConsensus.timeoutMessages[message.V] = make([]*proto.AsyncConsensus, 0)
-				rp.asyncConsensus.timeoutMessages[message.V] = append(rp.asyncConsensus.timeoutMessages[message.V], message)
 			}
+
+			if rp.senderInMessages(rp.asyncConsensus.timeoutMessages[message.V], message.Sender) {
+				return
+			}
+
+			rp.asyncConsensus.timeoutMessages[message.V] = append(rp.asyncConsensus.timeoutMessages[message.V], message)
 
 			timeouts, _ := rp.asyncConsensus.timeoutMessages[message.V]
 
@@ -152,12 +155,17 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 
 					key := strconv.Itoa(int(message.V)) + "." + strconv.Itoa(int(message.BlockNew.Level))
 					_, ok := rp.asyncConsensus.bFall[key]
-					if ok {
-						rp.asyncConsensus.bFall[key] = append(rp.asyncConsensus.bFall[key], message.BlockNew.Id)
-					} else {
+					if !ok {
 						rp.asyncConsensus.bFall[key] = make([]string, 0)
-						rp.asyncConsensus.bFall[key] = append(rp.asyncConsensus.bFall[key], message.BlockNew.Id)
 					}
+
+					for i := 0; i < len(rp.asyncConsensus.bFall[key]); i++ {
+						if rp.asyncConsensus.bFall[key][i] == message.BlockNew.Id {
+							return
+						}
+					}
+
+					rp.asyncConsensus.bFall[key] = append(rp.asyncConsensus.bFall[key], message.BlockNew.Id)
 
 					// if I still haven't sent a level 2 block, adapt the level 1 block, and send a level 2 block
 
@@ -250,10 +258,18 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.AsyncConsensus) {
 		if !ok {
 			panic("Key " + key + " is not found in the block store, which is a fallback block. Triggering this error after receiving an async-vote")
 		}
+
+		acks := rp.asyncConsensus.consensusPool.GetAcks(key)
+		for i := 0; i < len(acks); i++ {
+			if acks[i] == message.Sender {
+				return
+			}
+		}
+
 		rp.asyncConsensus.consensusPool.AddAck(key, message.Sender)
 
 		//	if there are n-f async votes for the block that I proposed
-		acks := rp.asyncConsensus.consensusPool.GetAcks(key)
+		acks = rp.asyncConsensus.consensusPool.GetAcks(key)
 		if len(acks) == rp.numReplicas/2+1 {
 
 			if message.BlockNew.Level == 1 && rp.asyncConsensus.sentLevel2Block[rp.asyncConsensus.vCurr] == false {
@@ -348,28 +364,26 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 
 			_, ok := rp.asyncConsensus.bFall[key]
 
-			if ok {
-				rp.asyncConsensus.bFall[key] = append(rp.asyncConsensus.bFall[key], message.BlockNew.Id)
-			} else {
+			if !ok {
 				rp.asyncConsensus.bFall[key] = make([]string, 0)
-				rp.asyncConsensus.bFall[key] = append(rp.asyncConsensus.bFall[key], message.BlockNew.Id)
 			}
+
+			for i := 0; i < len(rp.asyncConsensus.bFall[key]); i++ {
+				if rp.asyncConsensus.bFall[key][i] == message.BlockNew.Id {
+					return
+				}
+			}
+
+			rp.asyncConsensus.bFall[key] = append(rp.asyncConsensus.bFall[key], message.BlockNew.Id)
 
 			if len(rp.asyncConsensus.bFall[key]) == rp.numReplicas/2+1 {
 				// received majority fallback complete messages
 
 				l := rp.asyncConsensus.randomness[rp.asyncConsensus.vCurr] // l is the index of the leader
-				leaderNode := int32(-1)
-				for name, index := range rp.replicaArrayIndex {
-					if index == l {
-						leaderNode = name
-					}
-				}
-				if leaderNode == -1 {
-					panic("Random leader returned index " + strconv.Itoa(l) + " but there is no replica with that index")
-				}
+				leaderNode := l
+
 				if rp.debugOn {
-					common.Debug("Leader node for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr))+" is "+strconv.Itoa(int(leaderNode)), 2, rp.debugLevel, rp.debugOn)
+					common.Debug("Async leader node for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr))+" is "+strconv.Itoa(int(leaderNode)), 2, rp.debugLevel, rp.debugOn)
 				}
 
 				//– if height 2 block by leader exists in the first n-f height 2 blocks received then
@@ -398,7 +412,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 						common.Debug("Updated block commit in the async path for block "+rp.asyncConsensus.blockCommit.Id, 2, rp.debugLevel, rp.debugOn)
 					}
 					//	Set v cur , r cur to rank(block high)
-					rp.asyncConsensus.vCurr = rp.asyncConsensus.blockHigh.V
+					rp.asyncConsensus.vCurr = message.V
 					rp.asyncConsensus.rCurr = rp.asyncConsensus.blockHigh.R
 				} else {
 					if rp.debugOn {
@@ -423,7 +437,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 							//	Set block high to height2LeaderBlock
 							rp.asyncConsensus.blockHigh = height2LeaderBlock
 							//	Set v cur , r cur to rank(block high)
-							rp.asyncConsensus.vCurr = rp.asyncConsensus.blockHigh.V
+							rp.asyncConsensus.vCurr = message.V
 							rp.asyncConsensus.rCurr = rp.asyncConsensus.blockHigh.R
 							if rp.debugOn {
 								common.Debug("Updated block high (not committed) in the async path for block "+rp.asyncConsensus.blockHigh.Id, 2, rp.debugLevel, rp.debugOn)
@@ -444,7 +458,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 				rp.asyncConsensus.isAsync = false
 				// send <vote, v cur , r cur , block high > to L_Vcur
 
-				nextLeader := rp.getLeader(rp.asyncConsensus.rCurr+1, rp.asyncConsensus.vCurr)
+				nextLeader := rp.getLeader(rp.asyncConsensus.vCurr)
 
 				voteMsg := proto.AsyncConsensus{
 					Sender:      rp.name,
