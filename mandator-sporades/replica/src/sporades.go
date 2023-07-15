@@ -388,7 +388,7 @@ func (rp *Replica) handleConsensusExternalResponseMessage(message *proto.AsyncCo
 }
 
 /*
-	Set the great grand parent element to nil and return a new copy of the block
+	Set the great-grandparent element to nil and return a new copy of the block
 */
 
 func (rp *Replica) makeGreatGrandParentNil(blockOri *proto.AsyncConsensus_Block) *proto.AsyncConsensus_Block {
@@ -396,9 +396,49 @@ func (rp *Replica) makeGreatGrandParentNil(blockOri *proto.AsyncConsensus_Block)
 	block := blockOri
 
 	if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil {
-		block.Parent.Parent.Parent = nil
+
+		newGrandParent := rp.removeParentBlock(block.Parent.Parent)
+		newParent := rp.copyBlock(block.Parent)
+		newParent.Parent = newGrandParent
+		newParent = rp.copyBlock(newParent)
+		newBlock := rp.copyBlock(block)
+		newBlock.Parent = newParent
+		return newBlock
+	} else {
+		return blockOri
 	}
-	return block
+}
+
+/*
+	remove parent block
+*/
+
+func (rp *Replica) removeParentBlock(blockOri *proto.AsyncConsensus_Block) *proto.AsyncConsensus_Block {
+	returnBlock := &proto.AsyncConsensus_Block{
+		Id:       blockOri.Id,
+		V:        blockOri.V,
+		R:        blockOri.R,
+		Parent:   nil,
+		Commands: blockOri.Commands,
+		Level:    blockOri.Level,
+	}
+	return returnBlock
+}
+
+/*
+	copy block
+*/
+
+func (rp *Replica) copyBlock(blockOri *proto.AsyncConsensus_Block) *proto.AsyncConsensus_Block {
+	returnBlock := &proto.AsyncConsensus_Block{
+		Id:       blockOri.Id,
+		V:        blockOri.V,
+		R:        blockOri.R,
+		Parent:   blockOri.Parent,
+		Commands: blockOri.Commands,
+		Level:    blockOri.Level,
+	}
+	return returnBlock
 }
 
 /*

@@ -50,10 +50,6 @@ func (ms *AsyncConsensusStore) Add(block *proto.AsyncConsensus_Block) {
 
 	if block.Parent != nil {
 		ms.Add(block.Parent)
-		if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil {
-			block.Parent.Parent.Parent.Parent = nil
-		}
-
 	}
 
 	_, ok := ms.ConsensusBlocks[block.Id]

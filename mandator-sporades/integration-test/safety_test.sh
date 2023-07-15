@@ -80,7 +80,7 @@ pkill client
 
 echo "Killed instances"
 
-python3 integration-test/python/overlay-test.py ${output_path}/1-consensus.txt ${output_path}/2-consensus.txt ${output_path}/3-consensus.txt ${output_path}/4-consensus.txt ${output_path}/5-consensus.txt >${output_path}consensus-correctness.log &
-python3 integration-test/python/overlay-test.py ${output_path}/1-mem-pool.txt ${output_path}/2-mem-pool.txt ${output_path}/3-mem-pool.txt ${output_path}/4-mem-pool.txt ${output_path}/5-mem-pool.txt >${output_path}mem-pool-correctness.log &
+python3 integration-test/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt >${output_path}consensus-correctness.log &
+python3 integration-test/python/overlay-test.py ${output_path}1-mem-pool.txt ${output_path}2-mem-pool.txt ${output_path}3-mem-pool.txt ${output_path}4-mem-pool.txt ${output_path}5-mem-pool.txt >${output_path}mem-pool-correctness.log &
 
 echo "Finish test"
