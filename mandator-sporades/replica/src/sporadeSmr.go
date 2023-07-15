@@ -130,7 +130,7 @@ func (rp *Replica) updateSMR() {
 				}
 			}
 			if rp.debugOn {
-				common.Debug("Committed async consensus block "+nextBlockToCommit.Id+" with mem pool indexes "+fmt.Sprintf("%v", nextBlockToCommit.Commands)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 12, rp.debugLevel, rp.debugOn)
+				common.Debug("Committed async consensus block "+nextBlockToCommit.Id+" with mem pool indexes "+fmt.Sprintf("%v", nextBlockToCommit.Commands)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 22, rp.debugLevel, rp.debugOn)
 			}
 			rp.asyncConsensus.lastCommittedBlock = nextBlockToCommit
 			rp.asyncConsensus.consensusPool.Add(nextBlockToCommit)

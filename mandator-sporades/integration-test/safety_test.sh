@@ -27,11 +27,11 @@ pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${replica_path} --name 1 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 12 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}1.log &
-nohup ./${replica_path} --name 2 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 12 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}2.log &
-nohup ./${replica_path} --name 3 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 12 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}3.log &
-nohup ./${replica_path} --name 4 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 12 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}4.log &
-nohup ./${replica_path} --name 5 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 12 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}5.log &
+nohup ./${replica_path} --name 1 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}1.log &
+nohup ./${replica_path} --name 2 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}2.log &
+nohup ./${replica_path} --name 3 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}3.log &
+nohup ./${replica_path} --name 4 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}4.log &
+nohup ./${replica_path} --name 5 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}5.log &
 
 echo "Started 5 replicas"
 

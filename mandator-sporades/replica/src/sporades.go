@@ -183,7 +183,7 @@ func (rp *Replica) setViewTimer() {
 
 func (rp *Replica) handleAsyncConsensus(message *proto.AsyncConsensus) {
 
-	debugLevel := rp.debugLevel
+	debugLevel := 0
 
 	if message.Type == 1 {
 		if rp.debugOn {

@@ -157,7 +157,7 @@ func (rp *Replica) createInstanceIfMissing(instanceNum int) {
 */
 
 func (rp *Replica) handlePaxosConsensus(message *proto.PaxosConsensus) {
-	debugLevel := rp.debugLevel
+	debugLevel := 0
 
 	if message.Type == 1 {
 		if rp.debugOn {
