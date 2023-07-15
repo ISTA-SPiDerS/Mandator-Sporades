@@ -1,4 +1,4 @@
-This repo implements Sporades consensus protocol and a Mandator mempool.
+This repo implements Sporades consensus protocol and a Mandator memory pool.
 
 
 Our protocol uses the [Mage](https://magefile.org/) build tool. Therefore it needs the ```mage``` command to be installed.
