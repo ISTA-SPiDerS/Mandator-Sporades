@@ -395,9 +395,11 @@ func (rp *Replica) makeGreatGrandParentNil(blockOri *proto.AsyncConsensus_Block)
 
 	block := blockOri
 
-	if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil {
-
-		newGrandParent := rp.removeParentBlock(block.Parent.Parent)
+	if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil && block.Parent.Parent.Parent.Parent != nil {
+		newGreatGrandParent := rp.removeParentBlock(block.Parent.Parent.Parent)
+		newGrandParent := rp.copyBlock(block.Parent.Parent)
+		newGrandParent.Parent = newGreatGrandParent
+		newGrandParent = rp.copyBlock(newGrandParent)
 		newParent := rp.copyBlock(block.Parent)
 		newParent.Parent = newGrandParent
 		newParent = rp.copyBlock(newParent)
