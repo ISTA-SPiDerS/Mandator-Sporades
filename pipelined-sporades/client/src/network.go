@@ -72,7 +72,7 @@ func (cl *Client) WaitForConnections() {
 		for true {
 			conn, err := Listener.Accept()
 			if err != nil {
-				panic("Socket accept error" + fmt.Sprintf("%v", err))
+				panic("Socket accept error" + fmt.Sprintf("%v", err.Error()))
 			}
 			if _, err := io.ReadFull(conn, bs); err != nil {
 				panic("connection read error when establishing incoming connections" + fmt.Sprintf("%v", err))
@@ -207,7 +207,7 @@ func (cl *Client) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 	}
 	cl.outgoingReplicaWriterMutexs[peer].Unlock()
 	if cl.debugOn {
-		cl.debug("Internal sent message to "+strconv.Itoa(int(peer)), -1)
+		cl.debug("Internal sent message to "+strconv.Itoa(int(peer)), 0)
 	}
 }
 
@@ -222,7 +222,7 @@ func (cl *Client) StartOutgoingLinks() {
 				outgoingMessage := <-cl.outgoingMessageChan
 				cl.internalSendMessage(outgoingMessage.Peer, outgoingMessage.RpcPair)
 				if cl.debugOn {
-					cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), -1)
+					cl.debug("Invoked internal sent to replica "+strconv.Itoa(int(outgoingMessage.Peer)), 0)
 				}
 			}
 		}()
@@ -239,6 +239,6 @@ func (cl *Client) sendMessage(peer int32, rpcPair common.RPCPair) {
 		Peer:    peer,
 	}
 	if cl.debugOn {
-		cl.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), -1)
+		cl.debug("Added RPC pair to outgoing channel to peer "+strconv.Itoa(int(peer)), 0)
 	}
 }

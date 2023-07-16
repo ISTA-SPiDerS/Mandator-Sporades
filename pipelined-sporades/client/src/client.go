@@ -117,8 +117,9 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, clie
 		numReceivedBatches:  0,
 		receivedNumMutex:    &sync.Mutex{},
 	}
-
-	cl.debug("Created a new client instance", 0)
+	if cl.debugOn {
+		cl.debug("Created a new client instance", 0)
+	}
 
 	// initialize replicaAddrList
 	for i := 0; i < len(cfg.Peers); i++ {
