@@ -89,7 +89,7 @@ func (rp *Replica) updateSMR() {
 			for b := 0; b < len(responses); b++ {
 				senders = append(senders, responses[b].Sender)
 			}
-			rp.debug("Committed block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime))+" with "+strconv.Itoa(len(clientBatches))+" client batches from "+fmt.Sprintf("%v", senders), 12)
+			rp.debug("Committed block "+nextBlockToCommit.Id+" at time "+fmt.Sprintf(" %v", time.Now().Sub(rp.consensus.startTime))+" with "+strconv.Itoa(len(clientBatches))+" client batches from "+fmt.Sprintf("%v", senders), 22)
 		}
 		rp.consensus.lastCommittedBlock = nextBlockToCommit
 		rp.decrementPipelined()
