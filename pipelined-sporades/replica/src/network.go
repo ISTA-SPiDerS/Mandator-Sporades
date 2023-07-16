@@ -252,7 +252,7 @@ func (rp *Replica) internalSendMessage(peer int32, rpcPair *common.RPCPair) {
 		}
 		rp.outgoingReplicaWriterMutexs[peer].Unlock()
 		if rp.debugOn {
-			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), -1)
+			rp.debug("Internal sent message to "+strconv.Itoa(int(peer)), 0)
 		}
 	} else if peerType == "client" {
 		w := rp.outgoingClientWriters[peer]
