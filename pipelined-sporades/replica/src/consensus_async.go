@@ -18,7 +18,7 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 	if message.V >= rp.consensus.vCurr {
 		if !rp.consensus.isAsync {
 			//  save the timeout message in the timeoutMessages
-			timeoutMessages, ok := rp.consensus.timeoutMessages[message.V]
+			_, ok := rp.consensus.timeoutMessages[message.V]
 			if !ok {
 				rp.consensus.timeoutMessages[message.V] = make([]*proto.Pipelined_Sporades, 0)
 			}
@@ -30,7 +30,7 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 				return true // though unsuccessful, we process the message
 			}
 
-			rp.consensus.timeoutMessages[message.V] = append(timeoutMessages, message)
+			rp.consensus.timeoutMessages[message.V] = append(rp.consensus.timeoutMessages[message.V], message)
 
 			timeouts, _ := rp.consensus.timeoutMessages[message.V]
 
@@ -190,7 +190,17 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 					if !ok {
 						rp.consensus.bFall[key] = make([]string, 0)
 					}
-					rp.consensus.bFall[key] = append(rp.consensus.bFall[key], message.BlockNew.Id)
+					duplicate := false
+					for b := 0; b < len(rp.consensus.bFall[key]); b++ {
+						if rp.consensus.bFall[key][b] == message.BlockNew.Id {
+							duplicate = true // a duplicate
+							break
+						}
+					}
+
+					if !duplicate {
+						rp.consensus.bFall[key] = append(rp.consensus.bFall[key], message.BlockNew.Id)
+					}
 
 					// if I still haven't sent a level 2 block, adapt the level 1 block, and send a level 2 block
 
@@ -396,15 +406,6 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 
 			} else if message.BlockNew.Level == 2 {
 
-				if rp.isAsynchronous {
-
-					epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
-
-					if rp.amIAttacked(int(epoch)) {
-						time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
-					}
-				}
-
 				// broadcast <fallback-complete, B, v cur , self.id>
 				for name, _ := range rp.replicaAddrList {
 
@@ -460,7 +461,16 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 			if !ok {
 				rp.consensus.bFall[key] = make([]string, 0)
 			}
-			rp.consensus.bFall[key] = append(rp.consensus.bFall[key], message.BlockNew.Id)
+			found := false
+			for b := 0; b < len(rp.consensus.bFall[key]); b++ {
+				if rp.consensus.bFall[key][b] == message.BlockNew.Id {
+					found = true
+					break
+				}
+			}
+			if !found {
+				rp.consensus.bFall[key] = append(rp.consensus.bFall[key], message.BlockNew.Id)
+			}
 
 			if len(rp.consensus.bFall[key]) == rp.numReplicas/2+1 {
 				// received majority fallback complete messages
