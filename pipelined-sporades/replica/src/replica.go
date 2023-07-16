@@ -3,6 +3,7 @@ package src
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"pipelined-sporades/common"
 	"pipelined-sporades/configuration"
@@ -65,8 +66,10 @@ type Replica struct {
 
 	rejectedCount int // number of messages rejected because self is still not updated to a rank
 
-	isAsyncSim      bool
-	asyncSimTimeout int
+	isAsynchronous       bool
+	asyncSimTimeout      int
+	asynchronousReplicas map[int][]int // for each time based epoch, the minority replicas that are attacked
+	timeEpochSize        int           // how many ms for a given time epoch
 }
 
 const incomingBufferSize = 1000000 // the size of the buffer which receives all the incoming messages
@@ -76,7 +79,7 @@ const outgoingBufferSize = 1000000 // size of the buffer that collects messages 
 	instantiate a new replica instance, allocate the buffers
 */
 
-func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, benchmarkMode int, keyLen int, valLen int, pipelineLength int, networkbatchTime int, isAsyncSim bool, asyncSimTimeout int) *Replica {
+func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, debugLevel int, viewTimeout int, benchmarkMode int, keyLen int, valLen int, pipelineLength int, networkbatchTime int, isAsyncSim bool, asyncSimTimeout int, timeEpochSize int) *Replica {
 	rp := Replica{
 		name:          name,
 		listenAddress: common.GetAddress(cfg.Peers, name),
@@ -112,15 +115,17 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		viewTimeout:      viewTimeout,
 		logPrinted:       false,
 
-		benchmarkMode:    benchmarkMode,
-		state:            Init(benchmarkMode, name, keyLen, valLen),
-		incomingRequests: make([]*proto.ClientBatch, 0),
-		pipelineLength:   pipelineLength,
-		finished:         false,
-		networkbatchTime: networkbatchTime,
-		rejectedCount:    0,
-		isAsyncSim:       isAsyncSim,
-		asyncSimTimeout:  asyncSimTimeout,
+		benchmarkMode:        benchmarkMode,
+		state:                Init(benchmarkMode, name, keyLen, valLen),
+		incomingRequests:     make([]*proto.ClientBatch, 0),
+		pipelineLength:       pipelineLength,
+		finished:             false,
+		networkbatchTime:     networkbatchTime,
+		rejectedCount:        0,
+		isAsynchronous:       isAsyncSim,
+		asyncSimTimeout:      asyncSimTimeout,
+		asynchronousReplicas: make(map[int][]int),
+		timeEpochSize:        timeEpochSize,
 	}
 
 	// initialize clientAddrList
@@ -150,10 +155,59 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 	}
 	rp.consensus = InitAsyncConsensus(debugLevel, debugOn, rp.numReplicas)
 
+	if rp.isAsynchronous {
+		// initialize the attack replicas for each time epoch, we assume a total number of time of the run to be 10 minutes just for convenience, but this does not affect the correctness
+		numEpochs := 10 * 60 * 1000 / rp.timeEpochSize
+		s2 := rand.NewSource(39)
+		r2 := rand.New(s2)
+
+		for i := 0; i < numEpochs; i++ {
+			rp.asynchronousReplicas[i] = []int{}
+			for j := 0; j < rp.numReplicas/2; j++ {
+				newReplica := r2.Intn(39)%rp.numReplicas + 1
+				for rp.inArray(rp.asynchronousReplicas[i], newReplica) {
+					newReplica = r2.Intn(39)%rp.numReplicas + 1
+				}
+				rp.asynchronousReplicas[i] = append(rp.asynchronousReplicas[i], newReplica)
+			}
+		}
+
+		if rp.debugOn {
+			rp.debug(fmt.Sprintf("set of attacked nodes %v ", rp.asynchronousReplicas), 0)
+		}
+	}
+
 	pid := os.Getpid()
 	fmt.Printf("--Initialized replica %v with process id: %v \n", name, pid)
 
 	return &rp
+}
+
+/*
+	checks if replica is in ints
+*/
+
+func (rp *Replica) inArray(ints []int, replica int) bool {
+	for i := 0; i < len(ints); i++ {
+		if ints[i] == replica {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+	checks if self is in the set of attacked nodes for this replica in this time epoch
+*/
+
+func (rp *Replica) amIAttacked(epoch int) bool {
+	attackedNodes := rp.asynchronousReplicas[epoch]
+	for i := 0; i < len(attackedNodes); i++ {
+		if rp.name == int32(attackedNodes[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 /*

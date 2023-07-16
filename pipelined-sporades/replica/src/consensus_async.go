@@ -2,7 +2,6 @@ package src
 
 import (
 	"fmt"
-	"math/rand"
 	"pipelined-sporades/common"
 	"pipelined-sporades/proto"
 	"strconv"
@@ -88,9 +87,11 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 				// save the new block in the store
 				rp.consensus.consensusPool.Add(&newLevel1FallBackBlock)
 
-				if rp.isAsyncSim {
-					n := rand.Intn(rp.numReplicas) + 1
-					if int32(n) == rp.name {
+				if rp.isAsynchronous {
+
+					epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+					if rp.amIAttacked(int(epoch)) {
 						time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
 					}
 				}
@@ -231,9 +232,11 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 							// save the new block in the store
 							rp.consensus.consensusPool.Add(&newLevel2FallBackBlock)
 
-							if rp.isAsyncSim {
-								n := rand.Intn(rp.numReplicas) + 1
-								if int32(n) == rp.name {
+							if rp.isAsynchronous {
+
+								epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+								if rp.amIAttacked(int(epoch)) {
 									time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
 								}
 							}
@@ -353,9 +356,11 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 
 				rp.consensus.consensusPool.Add(&newLevel2FallBackBlock)
 
-				if rp.isAsyncSim {
-					n := rand.Intn(rp.numReplicas) + 1
-					if int32(n) == rp.name {
+				if rp.isAsynchronous {
+
+					epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+					if rp.amIAttacked(int(epoch)) {
 						time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
 					}
 				}
@@ -391,9 +396,11 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 
 			} else if message.BlockNew.Level == 2 {
 
-				if rp.isAsyncSim {
-					n := rand.Intn(rp.numReplicas) + 1
-					if int32(n) == rp.name {
+				if rp.isAsynchronous {
+
+					epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+					if rp.amIAttacked(int(epoch)) {
 						time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
 					}
 				}

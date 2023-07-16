@@ -2,7 +2,6 @@ package src
 
 import (
 	"fmt"
-	"math/rand"
 	"pipelined-sporades/common"
 	"pipelined-sporades/proto"
 	"strconv"
@@ -310,9 +309,11 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 			rp.debug("broadcasting propose type 1 "+fmt.Sprintf("%v", newBlock), 0)
 		}
 
-		if rp.isAsyncSim {
-			n := rand.Intn(rp.numReplicas) + 1
-			if int32(n) == rp.name {
+		if rp.isAsynchronous {
+
+			epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+			if rp.amIAttacked(int(epoch)) {
 				time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
 			}
 		}

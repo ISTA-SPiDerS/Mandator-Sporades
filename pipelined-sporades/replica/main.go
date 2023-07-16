@@ -24,7 +24,7 @@ func main() {
 	pipelineLength := flag.Int("pipelineLength", 1, "pipeline length")
 	networkbatchTime := flag.Int("networkbatchTime", 10, "artificial delay for sporades messages in ms")
 	asyncSimTimeout := flag.Int("asyncSimTimeout", 10, "artificial delay in ms to simulate asynchrony")
-
+	timeEpochSize := flag.Int("timeEpochSize", 500, "in ms the length of a time epoch for attacks")
 	flag.Parse()
 
 	cfg, err := configuration.NewInstanceConfig(*configFile, *name)
@@ -33,7 +33,7 @@ func main() {
 		panic(err)
 	}
 
-	rp := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *debugOn, *debugLevel, *viewTimeout, *benchmarkMode, *keyLen, *valLen, *pipelineLength, *networkbatchTime, *isAsyncSim, *asyncSimTimeout)
+	rp := src.New(int32(*name), cfg, *logFilePath, *batchSize, *batchTime, *debugOn, *debugLevel, *viewTimeout, *benchmarkMode, *keyLen, *valLen, *pipelineLength, *networkbatchTime, *isAsyncSim, *asyncSimTimeout, *timeEpochSize)
 
 	rp.WaitForConnections()
 	rp.StartOutgoingLinks()
