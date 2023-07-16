@@ -35,7 +35,6 @@ func NewInstanceConfig(fname string, name int64) (*InstanceConfig, error) {
 		return nil, err
 	}
 	cfg = configureSelfIP(cfg, name)
-	// sanity checks
 	return &cfg, nil
 }
 
