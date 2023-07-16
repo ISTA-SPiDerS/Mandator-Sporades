@@ -1,1 +1,1 @@
-This directory implements Sporades algorithm with pipelining
+This directory implements Sporades consensus algorithm with pipelining
