@@ -9,8 +9,6 @@ message SingleOperation {
 
 /*
   Client batch refers to a client request batch, or a client response batch
-  Client request batch is sent by a client once it has collected a batch of client requests
-  Client response batch is sent by a replica
 */
 
 message ClientBatch {
