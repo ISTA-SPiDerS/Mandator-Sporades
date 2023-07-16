@@ -6,6 +6,7 @@ import (
 	"mandator-sporades/common"
 	"mandator-sporades/configuration"
 	"mandator-sporades/proto"
+	"math/rand"
 	"os"
 	"strconv"
 	"sync"
@@ -64,8 +65,11 @@ type Replica struct {
 
 	benchmarkMode    int        // 0 for resident K/V store, 1 for redis
 	state            *Benchmark // k/v store
-	isAsync          bool
+	isAsynchronous   bool
 	asynchronousTime int // ms for simulating asynchronous timeouts
+
+	asynchronousReplicas map[int][]int // for each time based epoch, the minority replicas that are attacked
+	timeEpochSize        int           // how many ms for a given time epoch
 }
 
 const numOutgoingThreads = 100       // number of wire writers: since the I/O writing is expensive we delegate that task to a thread pool and separate from the critical path
@@ -76,7 +80,7 @@ const outgoingBufferSize = 100000000 // size of the buffer that collects message
 	instantiate a new replica instance, allocate the buffers
 */
 
-func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, mode int, debugLevel int, viewTimeout int, window int, networkBatchTime int, consAlgo string, benchmarkMode int, keyLen int, valLen int, isAsync bool, asyncSimTime int) *Replica {
+func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, replicaBatchSize int, replicaBatchTime int, debugOn bool, mode int, debugLevel int, viewTimeout int, window int, networkBatchTime int, consAlgo string, benchmarkMode int, keyLen int, valLen int, isAsync bool, asyncSimTime int, timeEpochSize int) *Replica {
 	rp := Replica{
 		name:          name,
 		listenAddress: common.GetAddress(cfg.Peers, name),
@@ -102,20 +106,22 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		replicaBatchSize: replicaBatchSize,
 		replicaBatchTime: replicaBatchTime,
 
-		outgoingMessageChan: make(chan *common.OutgoingRPC, outgoingBufferSize),
-		debugOn:             debugOn,
-		debugLevel:          debugLevel,
-		serverStarted:       false,
-		mode:                mode,
-		consensusStarted:    false,
-		viewTimeout:         viewTimeout,
-		logPrinted:          false,
-		networkBatchTime:    networkBatchTime,
-		consAlgo:            consAlgo,
-		benchmarkMode:       benchmarkMode,
-		state:               Init(benchmarkMode, name, keyLen, valLen),
-		isAsync:             isAsync,
-		asynchronousTime:    asyncSimTime,
+		outgoingMessageChan:  make(chan *common.OutgoingRPC, outgoingBufferSize),
+		debugOn:              debugOn,
+		debugLevel:           debugLevel,
+		serverStarted:        false,
+		mode:                 mode,
+		consensusStarted:     false,
+		viewTimeout:          viewTimeout,
+		logPrinted:           false,
+		networkBatchTime:     networkBatchTime,
+		consAlgo:             consAlgo,
+		benchmarkMode:        benchmarkMode,
+		state:                Init(benchmarkMode, name, keyLen, valLen),
+		isAsynchronous:       isAsync,
+		asynchronousTime:     asyncSimTime,
+		asynchronousReplicas: make(map[int][]int),
+		timeEpochSize:        timeEpochSize,
 	}
 
 	// init mem pool
@@ -165,10 +171,45 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 	rp.RegisterRPC(new(proto.AsyncConsensus), rp.messageCodes.AsyncConsensus)
 	rp.RegisterRPC(new(proto.PaxosConsensus), rp.messageCodes.PaxosConsensus)
 
+	if rp.isAsynchronous {
+		// initialize the attack replicas for each time epoch, we assume a total number of time of the run to be 10 minutes just for convenience, but this does not affect the correctness
+		numEpochs := 10 * 60 * 1000 / rp.timeEpochSize
+		s2 := rand.NewSource(39)
+		r2 := rand.New(s2)
+
+		for i := 0; i < numEpochs; i++ {
+			rp.asynchronousReplicas[i] = []int{}
+			for j := 0; j < rp.numReplicas/2; j++ {
+				newReplica := r2.Intn(39)%rp.numReplicas + 1
+				for rp.inArray(rp.asynchronousReplicas[i], newReplica) {
+					newReplica = r2.Intn(39)%rp.numReplicas + 1
+				}
+				rp.asynchronousReplicas[i] = append(rp.asynchronousReplicas[i], newReplica)
+			}
+		}
+
+		if rp.debugOn {
+			rp.debug(fmt.Sprintf("set of attacked nodes %v ", rp.asynchronousReplicas), 0)
+		}
+	}
+
 	pid := os.Getpid()
 	fmt.Printf("--Initialized %v replica %v with process id: %v \n", consAlgo, name, pid)
 
 	return &rp
+}
+
+/*
+	checks if replica is in ints
+*/
+
+func (rp *Replica) inArray(ints []int, replica int) bool {
+	for i := 0; i < len(ints); i++ {
+		if ints[i] == replica {
+			return true
+		}
+	}
+	return false
 }
 
 /*
@@ -201,4 +242,18 @@ func (rp *Replica) debug(message string, level int) {
 	if rp.debugOn && level >= rp.debugLevel {
 		fmt.Print(message)
 	}
+}
+
+/*
+	checks if self is in the set of attacked nodes for this replica in this time epoch
+*/
+
+func (rp *Replica) amIAttacked(epoch int) bool {
+	attackedNodes := rp.asynchronousReplicas[epoch]
+	for i := 0; i < len(attackedNodes); i++ {
+		if rp.name == int32(attackedNodes[i]) {
+			return true
+		}
+	}
+	return false
 }

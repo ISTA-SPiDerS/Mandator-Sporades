@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mandator-sporades/common"
 	"mandator-sporades/proto"
-	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -62,9 +61,11 @@ func (rp *Replica) handleConsensusTimeout(message *proto.AsyncConsensus) {
 
 				// save the new block in the store
 				rp.asyncConsensus.consensusPool.Add(&newLevel1FallBackBlock)
-				if rp.isAsync {
-					n := rand.Intn(rp.numReplicas) + 1
-					if int32(n) == rp.name {
+				if rp.isAsynchronous {
+
+					epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+					if rp.amIAttacked(int(epoch)) {
 						time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
 					}
 				}
@@ -196,9 +197,11 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 							// save the new block in the store
 							rp.asyncConsensus.consensusPool.Add(&newLevel2FallBackBlock)
 
-							if rp.isAsync {
-								n := rand.Intn(rp.numReplicas) + 1
-								if int32(n) == rp.name {
+							if rp.isAsynchronous {
+
+								epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+								if rp.amIAttacked(int(epoch)) {
 									time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
 								}
 							}
@@ -300,9 +303,11 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.AsyncConsensus) {
 				}
 
 				rp.asyncConsensus.consensusPool.Add(&newLevel2FallBackBlock)
-				if rp.isAsync {
-					n := rand.Intn(rp.numReplicas) + 1
-					if int32(n) == rp.name {
+				if rp.isAsynchronous {
+
+					epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+					if rp.amIAttacked(int(epoch)) {
 						time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
 					}
 				}

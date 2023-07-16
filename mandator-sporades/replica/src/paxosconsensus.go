@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mandator-sporades/common"
 	"mandator-sporades/proto"
-	"math/rand"
 	"strconv"
 	"time"
 )
@@ -216,9 +215,11 @@ func (rp *Replica) sendPropose(instance int32) {
 			panic("proposing when the last decided index does not have decisions")
 		}
 
-		if rp.isAsync {
-			n := rand.Intn(rp.numReplicas) + 1
-			if int32(n) == rp.name {
+		if rp.isAsynchronous {
+
+			epoch := time.Now().Sub(rp.paxosConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+			if rp.amIAttacked(int(epoch)) {
 				time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
 			}
 		}
