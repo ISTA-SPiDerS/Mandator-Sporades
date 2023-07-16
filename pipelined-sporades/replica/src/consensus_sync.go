@@ -39,7 +39,7 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 					rp.consensus.viewTimer.Cancel()
 					rp.consensus.viewTimer = nil
 				}
-				// if we have collected a majority of new view messages, set block_high to be the highest received block_high in the new view messages
+				// set block_high to be the highest received block_high in the new view messages
 				highest_block_high := rp.extractHighestRankedBlockHigh(rp.consensus.newViewMessages[message.V])
 				if rp.hasGreaterRank(highest_block_high.V, highest_block_high.R, rp.consensus.blockHigh.V, rp.consensus.blockHigh.R) {
 					rp.consensus.blockHigh = highest_block_high

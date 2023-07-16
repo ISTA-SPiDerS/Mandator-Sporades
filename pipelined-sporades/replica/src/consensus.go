@@ -469,10 +469,10 @@ func (rp *Replica) handleConsensusExternalResponseMessage(message *proto.Pipelin
 func (rp *Replica) makeNChain(blockOri *proto.Pipelined_Sporades_Block, n int) *proto.Pipelined_Sporades_Block {
 
 	block, err := CloneMyStruct(blockOri)
-	head := block
 	if err != nil {
 		panic(err.Error())
 	}
+	head := block
 
 	for n >= 0 {
 		n--
@@ -523,24 +523,10 @@ func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Spora
 		R:        orig.R,
 		ParentId: orig.ParentId,
 		Parent:   nil,
-		Commands: &proto.ReplicaBatch{
-			UniqueId: orig.Commands.UniqueId,
-			Requests: make([]*proto.ClientBatch, len(orig.Commands.Requests)),
-			Sender:   orig.Commands.Sender,
-		},
-		Level: orig.Level,
+		Commands: orig.Commands,
+		Level:    orig.Level,
 	}
-	for i := 0; i < len(orig.Commands.Requests); i++ {
-		rtCltB := &proto.ClientBatch{
-			UniqueId: orig.Commands.Requests[i].UniqueId,
-			Requests: make([]*proto.SingleOperation, len(orig.Commands.Requests[i].Requests)),
-			Sender:   orig.Commands.Requests[i].Sender,
-		}
-		for j := 0; j < len(orig.Commands.Requests[i].Requests); j++ {
-			rtCltB.Requests[j] = orig.Commands.Requests[i].Requests[j]
-		}
-		rtnBlc.Commands.Requests[i] = rtCltB
-	}
+
 	return rtnBlc, nil
 }
 
