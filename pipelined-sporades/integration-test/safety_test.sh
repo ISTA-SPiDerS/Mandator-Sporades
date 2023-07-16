@@ -46,9 +46,9 @@ nohup ./${ctl_path} --name 21 --logFilePath ${output_path} --requestType request
 nohup ./${ctl_path} --name 22 --logFilePath ${output_path} --requestType request  --debugLevel 10  --arrivalRate "${arrivalRate}"  >${output_path}22.log &
 nohup ./${ctl_path} --name 23 --logFilePath ${output_path} --requestType request  --debugLevel 10  --arrivalRate "${arrivalRate}"  >${output_path}23.log &
 nohup ./${ctl_path} --name 24 --logFilePath ${output_path} --requestType request  --debugLevel 10  --arrivalRate "${arrivalRate}"  >${output_path}24.log &
-nohup ./${ctl_path} --name 25 --logFilePath ${output_path} --requestType request  --debugLevel 10  --arrivalRate "${arrivalRate}"  >${output_path}25.log &
+./${ctl_path}       --name 25 --logFilePath ${output_path} --requestType request  --debugLevel 10  --arrivalRate "${arrivalRate}"  >${output_path}25.log
 
-sleep 80
+sleep 20
 
 echo "finished running clients"
 
@@ -65,6 +65,6 @@ pkill client; pkill client; pkill client; pkill client; pkill client
 
 echo "Killed instances"
 
-python3 integration-test/python/overlay-test.py ${output_path}/1-consensus.txt ${output_path}/2-consensus.txt ${output_path}/3-consensus.txt ${output_path}/4-consensus.txt ${output_path}/5-consensus.txt  >${output_path}correctness.log &
+python3 integration-test/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt  >${output_path}correctness.log &
 
 echo "Finish test"

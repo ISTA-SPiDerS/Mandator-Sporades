@@ -4,8 +4,6 @@
 package main
 
 import (
-	"os"
-
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -66,9 +64,4 @@ func Build() error {
 	}
 
 	return nil
-}
-
-// Remove binary executables.
-func Clean() error {
-	return os.RemoveAll("bin")
 }
