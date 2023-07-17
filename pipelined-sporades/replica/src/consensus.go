@@ -523,11 +523,48 @@ func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Spora
 		R:        orig.R,
 		ParentId: orig.ParentId,
 		Parent:   nil,
-		Commands: orig.Commands,
+		Commands: DuplicateCommands(orig.Commands),
 		Level:    orig.Level,
 	}
 
 	return rtnBlc, nil
+}
+
+// copies the replica batch
+
+func DuplicateCommands(commands *proto.ReplicaBatch) *proto.ReplicaBatch {
+	returnBatch := &proto.ReplicaBatch{
+		UniqueId: commands.UniqueId,
+		Requests: DuplicateRequests(commands.Requests),
+		Sender:   commands.Sender,
+	}
+	return returnBatch
+}
+
+// duplicate an array of client batches
+
+func DuplicateRequests(requests []*proto.ClientBatch) []*proto.ClientBatch {
+	returnArray := make([]*proto.ClientBatch, len(requests))
+	for i := 0; i < len(requests); i++ {
+		returnArray[i] = &proto.ClientBatch{
+			UniqueId: requests[i].UniqueId,
+			Requests: DuplicateClientRequests(requests[i].Requests),
+			Sender:   requests[i].Sender,
+		}
+	}
+	return returnArray
+}
+
+// duplicate client requests array
+
+func DuplicateClientRequests(requests []*proto.SingleOperation) []*proto.SingleOperation {
+	returnArray := make([]*proto.SingleOperation, len(requests))
+	for i := 0; i < len(requests); i++ {
+		returnArray[i] = &proto.SingleOperation{
+			Command: requests[i].Command,
+		}
+	}
+	return returnArray
 }
 
 /*
