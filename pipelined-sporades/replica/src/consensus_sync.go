@@ -109,6 +109,9 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 				rp.hasGreaterRank(message.BlockCommit.V, message.BlockCommit.R, rp.consensus.lastCommittedBlock.V, rp.consensus.lastCommittedBlock.R) {
 				rp.consensus.blockCommit = message.BlockCommit
 				rp.consensus.consensusPool.Add(message.BlockCommit)
+				if rp.debugOn {
+					rp.debug("follower updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 22)
+				}
 				rp.updateSMR()
 			}
 			// 	send <vote, v cur , r cur , block high > to Vcur leader
@@ -461,7 +464,7 @@ func (rp *Replica) handleConsensusVoteSync(message *proto.Pipelined_Sporades) bo
 				}
 				rp.consensus.blockCommit = savedBlock
 				if rp.debugOn {
-					rp.debug("sync leader updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 1)
+					rp.debug("sync leader updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 22)
 				}
 				rp.updateSMR()
 			}
