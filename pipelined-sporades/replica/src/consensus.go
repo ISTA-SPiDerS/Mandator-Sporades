@@ -555,6 +555,9 @@ func (rp *Replica) printLogConsensus() {
 	for head.Id != genesisBlock.Id {
 
 		toPrint = append([]*proto.Pipelined_Sporades_Block{head}, toPrint...)
+		if rp.debugOn {
+			rp.debug(fmt.Sprintf("printing: block %v\n", head), 22)
+		}
 
 		parent_id := head.ParentId
 		if parent_id == "genesis-block" {
@@ -568,8 +571,8 @@ func (rp *Replica) printLogConsensus() {
 		head = parent
 
 	}
-	count := 0
 	fmt.Printf("Number of committed blocks: %v\n", len(toPrint))
+	count := 0
 
 	for i := 0; i < len(toPrint); i++ {
 		for clientBatchIndex := 0; clientBatchIndex < len(toPrint[i].Commands.Requests); clientBatchIndex++ {
