@@ -569,6 +569,7 @@ func (rp *Replica) printLogConsensus() {
 
 	}
 	count := 0
+	fmt.Printf("Number of committed blocks: %v\n", len(toPrint))
 
 	for i := 0; i < len(toPrint); i++ {
 		for clientBatchIndex := 0; clientBatchIndex < len(toPrint[i].Commands.Requests); clientBatchIndex++ {
