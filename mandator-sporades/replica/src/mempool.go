@@ -213,6 +213,15 @@ func (rp *Replica) createNewMemBlock() {
 			i++
 		}
 
+		if rp.isAsynchronous {
+
+			epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+
+			if rp.amIAttacked(int(epoch)) {
+				time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
+			}
+		}
+
 		//	if the mode is 1
 		//		send the mem block to all replicas
 		if rp.mode == 1 {
