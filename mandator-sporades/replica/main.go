@@ -17,7 +17,7 @@ func main() {
 	batchTime := flag.Int("batchTime", 5000, "maximum time to wait for collecting a batch of requests in micro seconds")
 	debugOn := flag.Bool("debugOn", false, "false or true")
 	isAsync := flag.Bool("isAsync", false, "false or true for simulating asynchrony")
-	mode := flag.Int("mode", 2, "1 for all to all broadcast, and 2 for selective broadcast")
+	mode := flag.Int("mode", 1, "1 for all to all broadcast, and 2 for selective broadcast")
 	debugLevel := flag.Int("debugLevel", 0, "debug level")
 	viewTimeout := flag.Int("viewTimeout", 20000000, "view timeout in micro seconds")
 	window := flag.Int("window", 10, "window for abortable broadcast")
