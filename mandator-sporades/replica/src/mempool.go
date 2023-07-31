@@ -26,6 +26,7 @@ type MemPool struct {
 
 	lastCompletedRounds []int //array of N elements (N= number of replica) that keeps track of the last block for which at least n-f block-acks were collected, for each replica
 	awaitingAcks        bool  //states whether this replica is waiting for block-acks
+	startTime           time.Time
 }
 
 /*
@@ -44,6 +45,7 @@ func InitMemPool(mode int, numReplicas int, debugLevel int, debugOn bool, window
 		window:               window,
 		lastCompletedRounds:  make([]int, numReplicas),
 		awaitingAcks:         false,
+		startTime:            time.Now(),
 	}
 
 	for i := 0; i < numReplicas; i++ {
@@ -215,7 +217,7 @@ func (rp *Replica) createNewMemBlock() {
 
 		if rp.isAsynchronous {
 
-			epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
+			epoch := time.Now().Sub(rp.memPool.startTime).Milliseconds() / int64(rp.timeEpochSize)
 
 			if rp.amIAttacked(int(epoch)) {
 				time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
