@@ -34,7 +34,6 @@ client5_name=ec2-54-212-103-170.us-west-2.compute.amazonaws.com
 client5=${user_name}@${client5_name}
 
 declare -a machines=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1} ${client2} ${client3} ${client4} ${client5})
-declare -a machines_tune=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1})
 echo "ip addresses loaded"
 
 replica1_ip="35.93.7.223"
@@ -48,5 +47,3 @@ client2_ip="3.110.177.243"
 client3_ip="13.229.139.178"
 client4_ip="3.253.155.13"
 client5_ip="52.67.23.103"
-
-device="ens3" #"enp1s0"
