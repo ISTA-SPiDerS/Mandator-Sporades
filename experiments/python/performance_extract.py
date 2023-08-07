@@ -96,7 +96,7 @@ def getRabiaPerformance(root, initClient, numClients):
     return [sum(throughputs), sum(medians) / numClients, sum(ninety9s) / numClients, sum(errors)]
 
 
-def getMandatorSporadesPerformance(root, initClient, numClients):
+def getManatorSporadesPerformance(root, initClient, numClients):
     throughputs = []
     medians = []
     ninety9s = []
@@ -111,7 +111,7 @@ def getMandatorSporadesPerformance(root, initClient, numClients):
 
         with f:
             content = f.readlines()
-        if len(content) < 6:
+        if len(content) < 7:
             sys.exit("Error in " + file_name + "\n")
 
         if content[0].strip().split(" ")[0] == "Warning:":
