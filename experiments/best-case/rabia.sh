@@ -22,12 +22,7 @@ output_path="${pwd}/experiments/best-case/logs/rabia/${arrivalRate}/${ProxyBatch
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 echo "Removed old log files"
 
-Rabia_Path="/raxos/binary/rabia"
-
-remote_log_path="/home/${user_name}/raxos/logs/"
-
-reset_logs="rm -r ${remote_log_path} ; mkdir -p ${remote_log_path}"
-kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill paxos_raft_repl ; pkill paxos_raft_clie; pkill quepaxa_replica ; pkill quepaxa_client; pkill rabia"
+Rabia_Path="/mandator/binary/rabia"
 
 for i in "${machines[@]}"
 do
