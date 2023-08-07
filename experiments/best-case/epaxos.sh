@@ -3,32 +3,24 @@ replicaBatchSize=$2
 replicaBatchTime=$3
 setting=$4 # LAN or WAN
 iteration=$5
+pipelineLength=$6
 
 conflicts=2
-pipelineLength=1
-
-if [[ "${setting}" == "WAN" ]]
-then
-  pipelineLength=10
-fi
 
 pwd=$(pwd)
 . "${pwd}"/experiments/setup-5/ip.sh
 
-remote_algo_path="/raxos/binary/epaxos_server"
-remote_ctl_path="/raxos/binary/epaxos_client"
-remote_master_path="/raxos/binary/epaxos_master"
-remote_log_path="/home/${user_name}/raxos/logs/"
+remote_algo_path="/mandator/binary/epaxos_server"
+remote_ctl_path="/mandator/binary/epaxos_client"
+remote_master_path="/mandator/binary/epaxos_master"
+
 
 echo "Starting execution latency test"
 
-output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/execution/"
+output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/${pipelineLength}/execution/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
-
-reset_logs="rm -r ${remote_log_path} ; mkdir -p ${remote_log_path}"
-kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill paxos_raft_repl ; pkill paxos_raft_clie; pkill quepaxa_replica ; pkill quepaxa_client; pkill rabia"
 
 for i in "${machines[@]}"
 do
@@ -78,7 +70,7 @@ echo "finished execution latency test"
 
 echo "starting commit latency test"
 
-output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/commit/"
+output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/${pipelineLength}/commit/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
