@@ -16,7 +16,7 @@ replicaBatchTime = 5000
 iterations = list(range(1, int(numIter) + 1))
 pipelines = [1, 10]
 
-arrivals = [200, 1000, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
+arrivals = [500, 25000, 35000, 40000, 60000, 80000, 100000]
 
 for iteration in iterations:
     for arrival in arrivals:
