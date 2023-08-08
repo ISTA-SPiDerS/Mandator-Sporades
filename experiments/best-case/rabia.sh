@@ -9,7 +9,7 @@ pwd=$(pwd)
 . "${pwd}"/experiments/setup-5/ip.sh
 
 Controller=${replica1_ip}:8070
-RCFolder="/home/${user_name}/raxos/"
+RCFolder="/home/${user_name}/mandator/"
 NServers=5
 NFaulty=2
 NClients=5
@@ -39,7 +39,7 @@ export_command="export LogFilePath=${remote_log_path} RC_Ctrl=${Controller} RC_F
 echo "starting replicas"
 
 svr_export="export RC_Role=svr RC_Index=0 RC_SvrIp="${replica1_ip}" RC_PPort="9090" RC_NPort="10090""
-nohup sshpass ssh -o "StrictHostKeyChecking no"  -i ${cert} -n -f ${replica1} "${svr_export} && ${export_command} && .${Rabia_Path}" >${output_path}0.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no"  -i ${cert} -n -f ${replica1} "${svr_export} && ${export_command} &&  .${Rabia_Path}" >${output_path}0.log &
 
 svr_export="export RC_Role=svr RC_Index=1 RC_SvrIp="${replica2_ip}" RC_PPort="9091" RC_NPort="10091""
 nohup sshpass ssh -o "StrictHostKeyChecking no"  -i ${cert} -n -f ${replica2} "${svr_export} && ${export_command} &&  .${Rabia_Path}" >${output_path}1.log &

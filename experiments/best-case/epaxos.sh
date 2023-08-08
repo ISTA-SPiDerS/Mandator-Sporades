@@ -2,8 +2,8 @@ arrival=$1
 replicaBatchSize=$2
 replicaBatchTime=$3
 setting=$4 # LAN or WAN
-iteration=$5
-pipelineLength=$6
+pipelineLength=$5
+iteration=$6
 
 conflicts=2
 
@@ -14,10 +14,9 @@ remote_algo_path="/mandator/binary/epaxos_server"
 remote_ctl_path="/mandator/binary/epaxos_client"
 remote_master_path="/mandator/binary/epaxos_master"
 
-
 echo "Starting execution latency test"
 
-output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/${pipelineLength}/execution/"
+output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${pipelineLength}/${iteration}/execution/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
@@ -70,7 +69,7 @@ echo "finished execution latency test"
 
 echo "starting commit latency test"
 
-output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/${pipelineLength}/commit/"
+output_path="${pwd}/experiments/best-case/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${pipelineLength}/${iteration}/commit/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"

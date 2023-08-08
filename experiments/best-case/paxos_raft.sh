@@ -2,9 +2,9 @@ arrival=$1
 replicaBatchSize=$2
 replicaBatchTime=$3
 setting=$4 # LAN or WAN
-iteration=$5
-pipelineLength=$6
-algo=$7
+pipelineLength=$5
+algo=$6
+iteration=$7
 
 pwd=$(pwd)
 . "${pwd}"/experiments/setup-5/ip.sh
@@ -17,7 +17,7 @@ remote_config_path="/home/${user_name}/mandator/binary/paxos.yml"
 
 echo "Starting test"
 
-output_path="${pwd}/experiments/best-case/logs/${algo}/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/${pipelineLength}/execution/"
+output_path="${pwd}/experiments/best-case/logs/${algo}/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${pipelineLength}/${iteration}/execution/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"

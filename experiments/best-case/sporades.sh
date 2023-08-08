@@ -2,9 +2,9 @@ arrival=$1
 replicaBatchSize=$2
 replicaBatchTime=$3
 setting=$4 # LAN or WAN
-iteration=$5
-networkBatchTime=$6
-pipelineLength=$7
+networkBatchTime=$5
+pipelineLength=$6
+iteration=$7
 
 pwd=$(pwd)
 . "${pwd}"/experiments/setup-5/ip.sh
@@ -17,7 +17,7 @@ remote_config_path="/home/${user_name}/mandator/binary/mandator-sporades.yml"
 
 echo "Starting test"
 
-output_path="${pwd}/experiments/best-case/logs/sporades/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${iteration}/${networkBatchTime}/${pipelineLength}/execution/"
+output_path="${pwd}/experiments/best-case/logs/sporades/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${networkBatchTime}/${pipelineLength}/${iteration}/execution/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
@@ -33,11 +33,11 @@ echo "Removed all files in remote servers"
 
 sleep 2
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica1} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkBatchTime  ${networkBatchTime}   " >${output_path}1.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica2} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkBatchTime  ${networkBatchTime}   " >${output_path}2.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica3} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkBatchTime  ${networkBatchTime}   " >${output_path}3.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica4} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkBatchTime  ${networkBatchTime}   " >${output_path}4.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica5} ".${remote_algo_path} --name 5 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkBatchTime  ${networkBatchTime}   " >${output_path}5.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica1} ".${remote_algo_path} --name 1 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkbatchTime  ${networkBatchTime}   " >${output_path}1.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica2} ".${remote_algo_path} --name 2 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkbatchTime  ${networkBatchTime}   " >${output_path}2.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica3} ".${remote_algo_path} --name 3 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkbatchTime  ${networkBatchTime}   " >${output_path}3.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica4} ".${remote_algo_path} --name 4 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkbatchTime  ${networkBatchTime}   " >${output_path}4.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica5} ".${remote_algo_path} --name 5 --config ${remote_config_path}  --logFilePath ${remote_log_path} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --pipelineLength ${pipelineLength} --networkbatchTime  ${networkBatchTime}   " >${output_path}5.log &
 echo "Started servers"
 
 sleep 10
