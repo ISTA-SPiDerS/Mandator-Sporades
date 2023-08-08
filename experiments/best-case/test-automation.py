@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -20,6 +21,8 @@ arrivals = [200, 1000, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 50
 for iteration in iterations:
     for arrival in arrivals:
         for pipeline in pipelines:
+            print(str(datetime.now()) + ": iteration: " + str(iteration) + ", arrival:" + str(
+                arrival) + ", pipeline:" + str(pipeline) + "\n")
             os.system(
                 "/bin/bash experiments/best-case/epaxos.sh " + str(int(arrival)) + " "
                 + str(replicaBatchSize) + " "
