@@ -1,6 +1,6 @@
 # this file assigns the ip address of each replica and client to variables
 pwd=$(pwd)
-cert=${pwd}/experiments/private_key_aws/pasindu2023.pem
+cert=${pwd}/experiments/private_key_aws/pasindu2023
 user_name="ubuntu"
 
 replica1_name=ec2-13-54-113-84.ap-southeast-2.compute.amazonaws.com
