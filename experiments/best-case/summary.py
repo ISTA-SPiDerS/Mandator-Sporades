@@ -13,9 +13,9 @@ replicaBatchSize = 3000
 replicaBatchTime = 5000
 
 iterations = list(range(1, int(numIter) + 1))
-pipelines = [1, 10]
+pipelines = [10]
 
-arrivals = [500, 25000, 35000, 40000, 60000, 80000, 100000]
+arrivals = [500, 10000, 25000, 35000, 40000, 50000]
 
 
 def getEPaxosSummary():
@@ -76,7 +76,7 @@ def getPaxosRaftSummary():
         record = ["raft", str(1), str(arrival * 5)]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
-            root = "experiments/best-case/logs/raft/" + str(arrival)+"/"+str(replicaBatchSize) + "/"+str(replicaBatchTime) +"/" +setting +"/" + str(1) + "/" +str(iteration) +"/execution/"
+            root = "experiments/best-case/logs/raft/" + str(arrival)+"/"+str(replicaBatchSize) + "/"+str(replicaBatchTime) +"/" +setting +"/" + str(pipeline) + "/" +str(iteration) +"/execution/"
             t, l, n, e = getPaxosRaftPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
