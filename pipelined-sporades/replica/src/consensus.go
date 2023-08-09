@@ -114,6 +114,8 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *Sporades
 		asyncConsensus.sentFirstProposal[int32(i)] = false
 	}
 
+	asyncConsensus.randomness[10] = 1 // initial sync leader is 1
+
 	// initialize ordered Messages
 
 	for i := 0; i < numReplicas; i++ {

@@ -85,6 +85,8 @@ func InitAsyncConsensus(debugLevel int, debugOn bool, numReplicas int) *AsyncCon
 		asyncConsensus.sentLevel2Block[int32(i)] = false
 	}
 
+	asyncConsensus.randomness[10] = 1 // initial leader is replica 1
+
 	return &asyncConsensus
 }
 
