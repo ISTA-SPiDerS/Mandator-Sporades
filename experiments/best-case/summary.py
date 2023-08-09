@@ -6,81 +6,77 @@ parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir + "/python")
 from performance_extract import *
 
-numIter = sys.argv[1]
+setting = sys.argv[1]
+numIter = sys.argv[2]
 
 replicaBatchSize = 3000
 replicaBatchTime = 5000
 
 iterations = list(range(1, int(numIter) + 1))
-arrivals = [200, 1000, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
+pipelines = [1, 10]
+
+arrivals = [500, 25000, 35000, 40000, 60000, 80000, 100000]
 
 
 def getEPaxosSummary():
     l_records = []
     for arrival in arrivals:
-        record = ["epaxos-exec", str(arrival * 5)]
-        throughput, latency, nine9, err = [], [], [], []
-        for iteration in iterations:
-            root = "experiments/best-case/logs/epaxos/" + str(arrival) + "/" + str(int(replicaBatchSize)) \
-                   + "/" + str(replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/execution/"
-            t, l, n, e = getEPaxosPaxosPerformance(root, 7, 5)
-            throughput.append(t)
-            latency.append(l)
-            nine9.append(n)
-            err.append(e)
-        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
-        l_records.append(record)
+        for pipeline in pipelines:
+            record = ["epaxos-exec", str(pipeline), str(arrival * 5)]
+            throughput, latency, nine9, err = [], [], [], []
+            for iteration in iterations:
+                root = "experiments/best-case/logs/epaxos/" +str(arrival)+"/"+str(replicaBatchSize)+"/"+str(replicaBatchTime)+"/"+setting+"/"+str(pipeline)+ "/"+str(iteration)+"/execution/"
+                t, l, n, e = getEPaxosPaxosPerformance(root, 7, 5)
+                throughput.append(t)
+                latency.append(l)
+                nine9.append(n)
+                err.append(e)
+            record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+            l_records.append(record)
 
-        record = ["epaxos-commit", str(arrival * 5)]
-        throughput, latency, nine9, err = [], [], [], []
-        for iteration in iterations:
-            root = "experiments/best-case/logs/epaxos/" + str(arrival) + "/" + str(int(replicaBatchSize)) \
-                   + "/" + str(replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/commit/"
-            t, l, n, e = getEPaxosPaxosPerformance(root, 7, 5)
-            throughput.append(t)
-            latency.append(l)
-            nine9.append(n)
-            err.append(e)
-        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
-        l_records.append(record)
-
+            record = ["epaxos-commit", str(pipeline), str(arrival * 5)]
+            throughput, latency, nine9, err = [], [], [], []
+            for iteration in iterations:
+                root = "experiments/best-case/logs/epaxos/" +str(arrival)+"/"+str(replicaBatchSize)+"/"+str(replicaBatchTime)+"/"+setting+"/"+str(pipeline)+ "/"+str(iteration)+"/commit/"
+                t, l, n, e = getEPaxosPaxosPerformance(root, 7, 5)
+                throughput.append(t)
+                latency.append(l)
+                nine9.append(n)
+                err.append(e)
+            record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+            l_records.append(record)
     return l_records
 
-def getRabiaSummary():
+def getPaxosRaftSummary():
     l_records = []
     for arrival in arrivals:
-        record = ["rabia", str(arrival * 5)]
-        throughput, latency, nine9, err = [], [], [], []
-        for iteration in iterations:
-            root = "experiments/best-case/logs/rabia/" + str(arrival) + "/" + str(int(300)) \
-                   + "/" + setting + "/" + str(iteration) + "/execution/"
-            t, l, n, e = getRabiaPerformance(root, 5, 5)
-            throughput.append(t)
-            latency.append(l)
-            nine9.append(n)
-            err.append(e)
-        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
-        l_records.append(record)
-    return l_records
+        for pipeline in pipelines:
+            record = ["multi-paxos", str(pipeline), str(arrival * 5)]
+            throughput, latency, nine9, err = [], [], [], []
+            for iteration in iterations:
+                root = "experiments/best-case/logs/paxos/" + str(arrival)+"/"+str(replicaBatchSize) + "/"+str(replicaBatchTime) +"/" +setting +"/" + str(pipeline) + "/" +str(iteration) +"/execution/"
+                t, l, n, e = getPaxosRaftPerformance(root, 21, 5)
+                throughput.append(t)
+                latency.append(l)
+                nine9.append(n)
+                err.append(e)
+            record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+            l_records.append(record)
 
 
-def getPaxosSummary():
-    l_records = []
-    for arrival in arrivals:
-        record = ["paxos-v2", str(arrival * 5)]
+        record = ["raft", str(1), str(arrival * 5)]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
-            root = "experiments/best-case/logs/paxos-v2/" + str(arrival) + "/" + str(int(replicaBatchSize)) \
-                   + "/" + str(replicaBatchTime) + "/" + str(setting) + "/" + str(iteration) + "/execution/"
+            root = "experiments/best-case/logs/raft/" + str(arrival)+"/"+str(replicaBatchSize) + "/"+str(replicaBatchTime) +"/" +setting +"/" + str(1) + "/" +str(iteration) +"/execution/"
             t, l, n, e = getPaxosRaftPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
@@ -91,19 +87,83 @@ def getPaxosSummary():
         record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
         record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
         l_records.append(record)
+
+    return l_records
+
+def getMandatorSummary():
+    l_records = []
+    for arrival in arrivals:
+        for algo in ["paxos", "async"]:
+            record = ["mandator-"+algo, str(1), str(arrival * 5)]
+            throughput, latency, nine9, err = [], [], [], []
+            for iteration in iterations:
+                root = "experiments/best-case/logs/mandator/"  + algo + "/"+str(arrival)+ "/" + str(replicaBatchSize)+"/"+str(replicaBatchTime) +"/"+setting + "/3/" + str(iteration) +"/execution/"
+                t, l, n, e = getManatorSporadesPerformance(root, 21, 5)
+                throughput.append(t)
+                latency.append(l)
+                nine9.append(n)
+                err.append(e)
+            record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+            l_records.append(record)
+
+    return l_records
+
+def getSporadesSummary():
+    l_records = []
+    for arrival in arrivals:
+        for pipeline in pipelines:
+            record = ["sporades", str(pipeline), str(arrival * 5)]
+            throughput, latency, nine9, err = [], [], [], []
+            for iteration in iterations:
+                root = "experiments/best-case/logs/sporades/" + str(arrival)+"/"+str(replicaBatchSize) + "/" + str(replicaBatchTime) + "/" + setting +"/3/" + str(pipeline) + "/" + str(iteration)+ "/execution/"
+                t, l, n, e = getManatorSporadesPerformance(root, 21, 5)
+                throughput.append(t)
+                latency.append(l)
+                nine9.append(n)
+                err.append(e)
+            record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+            l_records.append(record)
+
+    return l_records
+
+def getRabiaSummary():
+    l_records = []
+    for arrival in arrivals:
+        record = ["rabia", str(1), str(arrival * 5)]
+        throughput, latency, nine9, err = [], [], [], []
+        for iteration in iterations:
+            root = "experiments/best-case/logs/rabia/" + str(arrival) +"/" + str(replicaBatchSize)+ "/"+ setting + "/"+str(iteration)+ "/execution/"
+            t, l, n, e = getRabiaPerformance(root, 5, 5)
+            throughput.append(t)
+            latency.append(l)
+            nine9.append(n)
+            err.append(e)
+        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+        l_records.append(record)
+
     return l_records
 
 
-headers = ["algo", "arrivalRate", "throughput", "median latency", "99%", "error rate"]
+headers = ["algo", "pipeline", "arrivalRate", "throughput", "median latency", "99%", "error rate"]
 records = [headers]
 
 ePaxosSummary = getEPaxosSummary()
-paxosV1Summary = getPaxosV1Summary()
-paxosV2Summary = getPaxosV2Summary()
-quePaxaSummary = getQuePaxaSummary()
+paxos_raftSummary = getPaxosRaftSummary()
+mandatorSummary = getMandatorSummary()
+sporadesSummary = getSporadesSummary()
 rabiaSummary = getRabiaSummary()
 
-records = records + ePaxosSummary + paxosV1Summary + paxosV2Summary + quePaxaSummary + rabiaSummary
+
+records = records + ePaxosSummary + paxos_raftSummary + mandatorSummary + sporadesSummary + rabiaSummary
 
 import csv
 

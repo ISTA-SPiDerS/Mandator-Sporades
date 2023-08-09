@@ -49,11 +49,12 @@ for iteration in iterations:
                     + setting + " " + str(pipeline) + " " + algo + " " +
                     str(iteration))
 
-            os.system(
-                "/bin/bash experiments/best-case/rabia.sh " + str(int(arrival)) + " "
-                + str(replicaBatchSize) + " "
-                + setting + " "
-                + str(iteration))
+            if pipeline == 1:
+                os.system(
+                    "/bin/bash experiments/best-case/rabia.sh " + str(int(arrival)) + " "
+                    + str(replicaBatchSize) + " "
+                    + setting + " "
+                    + str(iteration))
 
             os.system(
                 "/bin/bash experiments/best-case/sporades.sh " + str(int(arrival)) + " "
