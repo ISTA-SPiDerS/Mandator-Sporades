@@ -24,7 +24,7 @@ client1=${user_name}@${client1_name}
 client2_name=ec2-18-183-180-205.ap-northeast-1.compute.amazonaws.com
 client2=${user_name}@${client2_name}
 
-client3_name=ec2-13-124-6-190.ap-northeast-2.compute.amazonaws.com
+client3_name=ec2-43-201-112-31.ap-northeast-2.compute.amazonaws.com
 client3=${user_name}@${client3_name}
 
 client4_name=ec2-15-152-47-172.ap-northeast-3.compute.amazonaws.com
@@ -44,7 +44,7 @@ replica5_ip="54.251.150.217"
 
 client1_ip="13.211.188.163"
 client2_ip="18.183.180.205"
-client3_ip="13.124.6.190"
+client3_ip="43.201.112.31"
 client4_ip="15.152.47.172"
 client5_ip="54.251.157.141"
 
