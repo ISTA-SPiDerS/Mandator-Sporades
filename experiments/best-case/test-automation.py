@@ -18,6 +18,8 @@ iterations = list(range(1, int(numIter) + 1))
 
 arrivals = [500, 10000, 25000, 35000, 40000, 50000]
 
+os.system("/bin/bash experiments/setup-5/setup.sh")
+
 for iteration in iterations:
     for arrival in arrivals:
         print(str(datetime.now()) + ": iteration: " + str(iteration) + ", arrival:" + str(
