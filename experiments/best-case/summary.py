@@ -9,7 +9,7 @@ from performance_extract import *
 setting = sys.argv[1]
 numIter = sys.argv[2]
 
-replicaBatchSize = 3000
+replicaBatchSize = 1000
 replicaBatchTime = 5000
 
 iterations = list(range(1, int(numIter) + 1))
