@@ -15,7 +15,7 @@ replicaBatchTime = 5000
 iterations = list(range(1, int(numIter) + 1))
 pipelines = [10]
 
-arrivals = [500, 10000, 25000, 35000, 40000, 50000]
+arrivals = [500, 10000, 25000, 35000, 40000, 50000, 60000, 75000, 100000]
 
 
 def getEPaxosSummary():

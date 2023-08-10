@@ -16,7 +16,7 @@ pipeline = 10
 
 iterations = list(range(1, int(numIter) + 1))
 
-arrivals = [500, 10000, 25000, 35000, 40000, 50000]
+arrivals = [500, 10000, 25000, 35000, 40000, 50000, 60000, 75000, 100000]
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
