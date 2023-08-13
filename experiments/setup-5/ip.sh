@@ -51,3 +51,10 @@ client5_ip="13.212.137.13"
 kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill man_client; pkill man_replica;  pkill pa_ra_replica ; pkill pa_ra_client; pkill pipe_client; pkill pipe_replica; pkill rabia"
 remote_log_path="/home/${user_name}/mandator/logs/"
 reset_logs="rm -r ${remote_log_path} ; mkdir -p ${remote_log_path}"
+
+for i in "${machines[@]}"
+do
+   echo "killing instances and removing old files in ${i}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}; ${kill_command}"
+done
+
