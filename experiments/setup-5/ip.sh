@@ -55,6 +55,6 @@ reset_logs="rm -r ${remote_log_path} ; mkdir -p ${remote_log_path}"
 for i in "${machines[@]}"
 do
    echo "killing instances and removing old files in ${i}"
-   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}; ${kill_command}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "$i" "${reset_logs}; ${kill_command}; ${kill_command}; ${kill_command}"
 done
 
