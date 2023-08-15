@@ -1,20 +1,20 @@
 scenario=$1
-arrival=$1
-replicaBatchSize=$2
-replicaBatchTime=$3
-clientBatchSize=$4
-clientBatchTime=$5
-clientWindow=$6
-asyncSimTimeout=$7
-asyncTimeEpochSize=$8
-benchmarkMode=$9 # 0 or 1
-viewTimeout=${10}
-setting=${11} # LAN or WAN
-networkBatchTime=${12}
-pipelineLength=${13}
-collectClientLogs=${14}
-isLeaderKill=${15}
-iteration=${16}
+arrival=$2
+replicaBatchSize=$3
+replicaBatchTime=$4
+clientBatchSize=$5
+clientBatchTime=$6
+clientWindow=$7
+asyncSimTimeout=$8
+asyncTimeEpochSize=$9
+benchmarkMode=${10} # 0 or 1
+viewTimeout=${11}
+setting=${12} # LAN or WAN
+networkBatchTime=${13}
+pipelineLength=${14}
+collectClientLogs=${15}
+isLeaderKill=${16}
+iteration=${17}
 
 
 pwd=$(pwd)
@@ -66,7 +66,7 @@ sleep 15
 if [[ "${isLeaderKill}" == "yes" ]]
 then
   echo "killing the first leader"
-  sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "${replica1}" "${kill_command}"
+  sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "${replica1}" "${kill_command}; ${kill_command}"
 fi
 
 sleep 110
