@@ -48,11 +48,11 @@ sleep 5
 
 echo "Starting client[s]"
 
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} -name 21    -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 0 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}21.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} -name 22    -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 1 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}22.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client3} ".${remote_ctl_path} -name 23    -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 2 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}23.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client4} ".${remote_ctl_path} -name 24    -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 3 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}24.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client5} ".${remote_ctl_path} -name 25    -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 4 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}25.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path} -name 7     -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 0 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}21.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} -name 8     -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 1 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}22.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client3} ".${remote_ctl_path} -name 9     -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 2 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}23.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client4} ".${remote_ctl_path} -name 10    -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 3 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}24.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client5} ".${remote_ctl_path} -name 11    -maddr ${replica1_ip} -w 50  -c ${conflicts} -arrivalRate ${arrival} -clientBatchSize ${clientBatchSize} -defaultReplica 4 -logFilePath ${remote_log_path} --window ${clientWindow}" >${output_path}25.log &
 
 sleep 10
 
@@ -69,11 +69,11 @@ echo "Completed Client[s]"
 if [[ "${collectClientLogs}" == "yes" ]]
 then
   echo "collecting client logs"
-  scp -i ${cert} ${client1}:${remote_log_path}21.txt ${output_path}21.txt
-  scp -i ${cert} ${client2}:${remote_log_path}22.txt ${output_path}22.txt
-  scp -i ${cert} ${client3}:${remote_log_path}23.txt ${output_path}23.txt
-  scp -i ${cert} ${client4}:${remote_log_path}24.txt ${output_path}24.txt
-  scp -i ${cert} ${client5}:${remote_log_path}25.txt ${output_path}25.txt
+  scp -i ${cert} ${client1}:${remote_log_path}7.txt  ${output_path}21.txt
+  scp -i ${cert} ${client2}:${remote_log_path}8.txt  ${output_path}22.txt
+  scp -i ${cert} ${client3}:${remote_log_path}9.txt  ${output_path}23.txt
+  scp -i ${cert} ${client4}:${remote_log_path}10.txt ${output_path}24.txt
+  scp -i ${cert} ${client5}:${remote_log_path}11.txt ${output_path}25.txt
 fi
 
 echo "finished execution latency test"
