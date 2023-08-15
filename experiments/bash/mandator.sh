@@ -28,7 +28,7 @@ remote_config_path="/home/${user_name}/mandator/binary/mandator-sporades.yml"
 
 echo "Starting test"
 
-output_path="${pwd}/experiments/${scenario}/logs/mandator/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${algo}/${networkBatchTime}/${clientWindow}/${asyncSimTime}/${clientBatchSize}/${clientBatchTime}/${benchmarkMode}/${broadcastMode}/${asyncTimeEpochSize}/${viewTimeout}/${iteration}/execution"
+output_path="${pwd}/experiments/${scenario}/logs/mandator/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${algo}/${networkBatchTime}/${clientWindow}/${asyncSimTime}/${clientBatchSize}/${clientBatchTime}/${benchmarkMode}/${broadcastMode}/${asyncTimeEpochSize}/${viewTimeout}/${iteration}/execution/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
@@ -56,17 +56,17 @@ sleep 20
 echo "Starting client[s]"
 
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 1 --logFilePath ${remote_log_path} --name 21  --requestType request --window ${clientWindow} " >${output_path}21.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 1 --logFilePath ${remote_log_path} --name 22  --requestType request --window ${clientWindow} " >${output_path}22.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client3} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 1 --logFilePath ${remote_log_path} --name 23  --requestType request --window ${clientWindow} " >${output_path}23.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client4} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 1 --logFilePath ${remote_log_path} --name 24  --requestType request --window ${clientWindow} " >${output_path}24.log &
-nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client5} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 1 --logFilePath ${remote_log_path} --name 25  --requestType request --window ${clientWindow} " >${output_path}25.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 2 --logFilePath ${remote_log_path} --name 22  --requestType request --window ${clientWindow} " >${output_path}22.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client3} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 3 --logFilePath ${remote_log_path} --name 23  --requestType request --window ${clientWindow} " >${output_path}23.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client4} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 4 --logFilePath ${remote_log_path} --name 24  --requestType request --window ${clientWindow} " >${output_path}24.log &
+nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client5} ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --designatedReplica 5 --logFilePath ${remote_log_path} --name 25  --requestType request --window ${clientWindow} " >${output_path}25.log &
 
-sleep 50
+sleep 15
 
 if [[ "${isLeaderKill}" == "yes" ]]
 then
   echo "killing the first leader"
-  sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "${replica1}" "${kill_command}"
+  sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "${replica1}" "${kill_command};${kill_command}"
 fi
 
 sleep 110

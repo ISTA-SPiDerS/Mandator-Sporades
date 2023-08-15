@@ -7,3 +7,4 @@
 *.zip
 experiments/private_key_aws/pasindu2023
 experiments/private_key_aws/pasindu2023.pub
+experiments/test-automation/graph*.py
