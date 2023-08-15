@@ -1,11 +1,12 @@
 scenario=$1
 arrivalRate=$2
 ProxyBatchSize=$3
-setting=$4 # LAN or WAN
-isLeaderKill=$5
+ProxyBatchTimeout=$4 # ms
+setting=$5 # LAN or WAN
 ClientBatchSize=$6
-ProxyBatchTimeout=$7 # ms
-iteration=$8
+isLeaderKill=$7
+collectClientLogs=$8
+iteration=$9
 
 pwd=$(pwd)
 . "${pwd}"/experiments/setup-5/ip.sh
@@ -19,7 +20,7 @@ NClients=5
 ClientTimeout=60 # test duration
 RC_Peers_N="${replica1_ip}:10090,${replica2_ip}:10091,${replica3_ip}:10092,${replica4_ip}:10093,${replica5_ip}:10094"
 
-output_path="${pwd}/experiments/${scenario}/logs/rabia/${arrivalRate}/${ProxyBatchSize}/${setting}/${ClientBatchSize}/${ProxyBatchTimeout}/${iteration}/execution/"
+output_path="${pwd}/experiments/${scenario}/logs/rabia/${arrivalRate}/${ProxyBatchSize}/${ProxyBatchTimeout}/${setting}/${ClientBatchSize}/${iteration}/execution/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 echo "Removed old log files"
 
@@ -73,7 +74,7 @@ sleep 10
 if [[ "${isLeaderKill}" == "yes" ]]
 then
   echo "killing the first leader"
-  sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "${replica1}" "${kill_command}"
+  sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "${replica1}" "${kill_command}; ${kill_command}"
 fi
 
 sleep 100
