@@ -38,5 +38,4 @@ def print_clients(clientIPs):
 
 
 print_peers(replicaIPs)
-print()
 print_clients(clientIPs)
