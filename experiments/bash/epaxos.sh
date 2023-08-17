@@ -79,7 +79,8 @@ fi
 echo "finished execution latency test"
 
 ######################
-
+pwd=$(pwd)
+. "${pwd}"/experiments/setup-5/ip.sh
 
 echo "Starting commit latency test"
 
