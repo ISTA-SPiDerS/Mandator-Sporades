@@ -3,7 +3,7 @@ pwd=$(pwd)
 cert=${pwd}/experiments/private_key_aws/pasindu2023
 user_name="ubuntu"
 
-replica1_name=ec2-54-215-190-55.us-west-1.compute.amazonaws.com
+replica1_name=ec2-54-183-11-112.us-west-1.compute.amazonaws.com
 replica1=${user_name}@${replica1_name}
 
 replica2_name=ec2-13-57-19-239.us-west-1.compute.amazonaws.com
@@ -36,7 +36,7 @@ client5=${user_name}@${client5_name}
 declare -a machines=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1} ${client2} ${client3} ${client4} ${client5})
 echo "ip addresses loaded"
 
-replica1_ip="54.215.190.55"
+replica1_ip="54.183.11.112"
 replica2_ip="13.57.19.239"
 replica3_ip="13.52.76.87"
 replica4_ip="3.101.29.195"
