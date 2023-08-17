@@ -11,7 +11,7 @@ os.system("/bin/bash experiments/setup-5/setup.sh")
 
 arrivals = [500, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
 
-scenario="best-case"
+scenario="best-case-wan"
 replicaBatchSize=str(3000)
 replicaBatchTime=str(5000)
 clientBatchSize=str(50)
