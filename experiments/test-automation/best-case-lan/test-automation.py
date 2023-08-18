@@ -52,7 +52,7 @@ for iteration in [1,2,3]:
             runPaxosRaft(params)
 
         # sporades
-        for networkNatchTime in [1,2,3]:
+        for networkNatchTime in [2]:
             params = {}
             params["scenario"]=scenario
             params["arrival"]=str(arrival)
