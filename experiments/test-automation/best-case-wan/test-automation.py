@@ -66,7 +66,7 @@ for iteration in [1,2,3]:
         params["benchmarkMode"]=benchmarkMode
         params["viewTimeout"]=viewTimeout
         params["setting"]=setting
-        params["networkBatchTime"]=str(5)
+        params["networkBatchTime"]=str(0)
         params["pipelineLength"]=pipelineLength
         params["collectClientLogs"]=collectClientLogs
         params["isLeaderKill"]=isLeaderKill
