@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -7,7 +8,7 @@ grandParentdir = os.path.dirname(parentdir)
 sys.path.append(grandParentdir + "/python")
 from performance_extract import *
 
-arrivals = [500, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+arrivals = [500, 10000, 20000, 30000, 35000, 40000, 45000, 50000, 60000, 70000, 80000, 90000]
 
 scenario="best-case-wan"
 replicaBatchSize=str(3000)
@@ -34,7 +35,7 @@ def getEPaxosSummary():
         record = ["epaxos-exec", str(arrival * 5)]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
-            root = "experiments/" + scenario+"/logs/epaxos/" +str(arrival)+"/"+replicaBatchSize+"/"+replicaBatchTime+"/"+setting+"/"+pipelineLength+"/"+str(2)+"/"+clientWindow+ "/" +clientBatchSize+"/" +str(iteration)+"/execution/"
+            root = "experiments/" + scenario+"/logs/epaxos/" +str(arrival)+"/"+replicaBatchSize+"/"+replicaBatchTime+"/"+setting+"/"+pipelineLength+"/"+str(2)+"/"+str(1000)+ "/" +clientBatchSize+"/" +str(iteration)+"/execution/"
             t, l, n, e = getEPaxosPaxosPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
@@ -49,7 +50,7 @@ def getEPaxosSummary():
         record = ["epaxos-commit", str(arrival * 5)]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
-            root = "experiments/"+scenario+"/logs/epaxos/" +str(arrival)+"/"+replicaBatchSize+"/"+replicaBatchTime+"/"+setting+"/"+pipelineLength+"/"+str(2)+"/"+clientWindow+ "/" +clientBatchSize+"/" +str(iteration)+"/commit/"
+            root = "experiments/"+scenario+"/logs/epaxos/" +str(arrival)+"/"+replicaBatchSize+"/"+replicaBatchTime+"/"+setting+"/"+pipelineLength+"/"+str(2)+"/"+str(1000)+ "/" +clientBatchSize+"/" +str(iteration)+"/commit/"
             t, l, n, e = getEPaxosPaxosPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
@@ -89,7 +90,7 @@ def getPaxosRaftSummary():
 def getSporadesSummary():
     l_records = []
     for arrival in arrivals:
-        for networkNatchTime in [10]:
+        for networkNatchTime in [0]:
             record = ["sporades-"+str(networkNatchTime), str(arrival * 5)]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
@@ -129,37 +130,17 @@ def getMandatorSummary():
 
     return l_records
 
-def getRabiaSummary():
-    l_records = []
-    for arrival in arrivals:
-        record = ["rabia", str(arrival * 5)]
-        throughput, latency, nine9, err = [], [], [], []
-        for iteration in iterations:
-            root = "experiments" +"/"+ scenario+"/logs/rabia/" +str(arrival)+"/"+str(300)+"/"+replicaBatchTime+"/"+setting+"/"+clientBatchSize+"/"+str(iteration)+"/"+"execution/"
-            t, l, n, e = getRabiaPerformance(root, 21, 5)
-            throughput.append(t)
-            latency.append(l)
-            nine9.append(n)
-            err.append(e)
-        record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-        record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
-        l_records.append(record)
-
-    return l_records
 
 ePaxosSummary = getEPaxosSummary()
 paxos_raftSummary = getPaxosRaftSummary()
 sporadesSummary = getSporadesSummary()
 mandatorSummary = getMandatorSummary()
-rabiaSummary = getRabiaSummary()
 
 
-records = records + ePaxosSummary + paxos_raftSummary + sporadesSummary + mandatorSummary + rabiaSummary
+records = records + ePaxosSummary + paxos_raftSummary + sporadesSummary + mandatorSummary
 
 import csv
 
-with open("experiments/best-case-wan/logs/summary.csv", "w", newline="") as f:
+with open("experiments/"+scenario+"/logs/"+scenario+"-summary"+str(datetime.now())+".csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerows(records)

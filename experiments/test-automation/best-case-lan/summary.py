@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -89,7 +90,7 @@ def getPaxosRaftSummary():
 def getSporadesSummary():
     l_records = []
     for arrival in arrivals:
-        for networkNatchTime in [1,2,3]:
+        for networkNatchTime in [2]:
             record = ["sporades-"+str(networkNatchTime), str(arrival * 5)]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
@@ -137,6 +138,6 @@ records = records + ePaxosSummary + paxos_raftSummary + sporadesSummary + rabiaS
 
 import csv
 
-with open("experiments/best-case-lan/logs/summary.csv", "w", newline="") as f:
+with open("experiments/"+scenario+"/logs/"+scenario+"-summary-"+ str(datetime.now())+".csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerows(records)
