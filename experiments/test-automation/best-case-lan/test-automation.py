@@ -78,7 +78,7 @@ for iteration in [1,2,3]:
         params["scenario"]=scenario
         params["arrivalRate"]=str(arrival)
         params["ProxyBatchSize"]=str(300)
-        params["ProxyBatchTimeout"]=replicaBatchTime
+        params["ProxyBatchTimeout"]=str(5)
         params["setting"]=setting
         params["ClientBatchSize"]=clientBatchSize
         params["isLeaderKill"]=isLeaderKill

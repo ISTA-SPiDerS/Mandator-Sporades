@@ -114,7 +114,7 @@ def getRabiaSummary():
         record = ["rabia", str(arrival * 5)]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
-            root = "experiments" +"/"+ scenario+"/logs/rabia/" +str(arrival)+"/"+str(300)+"/"+replicaBatchTime+"/"+setting+"/"+clientBatchSize+"/"+str(iteration)+"/"+"execution/"
+            root = "experiments" +"/"+ scenario+"/logs/rabia/" +str(arrival)+"/"+str(300)+"/"+str(5)+"/"+setting+"/"+clientBatchSize+"/"+str(iteration)+"/"+"execution/"
             t, l, n, e = getRabiaPerformance(root, 21, 5)
             throughput.append(t)
             latency.append(l)
