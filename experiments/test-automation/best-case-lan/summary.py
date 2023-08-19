@@ -90,7 +90,7 @@ def getPaxosRaftSummary():
 def getSporadesSummary():
     l_records = []
     for arrival in arrivals:
-        for networkNatchTime in [2]:
+        for networkNatchTime in [0]:
             record = ["sporades-"+str(networkNatchTime), str(arrival * 5)]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
