@@ -24,6 +24,12 @@ output_path="${pwd}/experiments/${scenario}/logs/rabia/${arrivalRate}/${ProxyBat
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 echo "Removed old log files"
 
+for i in "${machines[@]}"
+do
+   echo "killing instances and removing old files in ${i}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert}   -n -f "$i" "${reset_logs}; ${kill_command}; ${kill_command}; ${kill_command}"
+done
+
 Rabia_Path="/mandator/binary/rabia"
 
 export_command="export LogFilePath=${remote_log_path} RC_Ctrl=${Controller} RC_Folder=${RCFolder} RC_LLevel="warn" Rabia_ClosedLoop=false Rabia_NServers=${NServers} Rabia_NFaulty=${NFaulty} Rabia_NClients=${NClients} Rabia_NConcurrency=1 Rabia_ClientBatchSize=${ClientBatchSize} Rabia_ClientTimeout=${ClientTimeout} Rabia_ClientThinkTime=0 Rabia_ClientNRequests=0 Rabia_ClientArrivalRate=${arrivalRate} Rabia_ProxyBatchSize=${ProxyBatchSize} Rabia_ProxyBatchTimeout=${ProxyBatchTimeout} Rabia_NetworkBatchSize=0 Rabia_NetworkBatchTimeout=0 RC_Peers=${RC_Peers_N} Rabia_StorageMode=0"

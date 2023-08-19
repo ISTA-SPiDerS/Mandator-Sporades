@@ -32,6 +32,12 @@ rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
 
+for i in "${machines[@]}"
+do
+   echo "killing instances and removing old files in ${i}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert}  -n -f "$i" "${reset_logs}; ${kill_command}; ${kill_command}; ${kill_command}"
+done
+
 
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica1} ".${remote_algo_path} --asyncTimeout ${asyncTimeout} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --benchmarkMode ${benchmarkMode} --config ${remote_config_path}  --consAlgo ${algo} --isAsync --logFilePath ${remote_log_path} --name 1 --pipelineLength ${pipelineLength} --timeEpochSize ${asyncTimeEpochSize} --viewTimeout ${viewTimeout} " >${output_path}1.log &
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica2} ".${remote_algo_path} --asyncTimeout ${asyncTimeout} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --benchmarkMode ${benchmarkMode} --config ${remote_config_path}  --consAlgo ${algo} --isAsync --logFilePath ${remote_log_path} --name 2 --pipelineLength ${pipelineLength} --timeEpochSize ${asyncTimeEpochSize} --viewTimeout ${viewTimeout} " >${output_path}2.log &

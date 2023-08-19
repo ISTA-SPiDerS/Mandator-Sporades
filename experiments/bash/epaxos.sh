@@ -24,6 +24,12 @@ output_path="${pwd}/experiments/${scenario}/logs/epaxos/${arrival}/${replicaBatc
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 echo "Removed old local log files"
 
+for i in "${machines[@]}"
+do
+   echo "killing instances and removing old files in ${i}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f "$i" "${reset_logs}; ${kill_command}; ${kill_command}; ${kill_command}"
+done
+
 sleep 2
 
 echo "starting master"
@@ -87,6 +93,13 @@ echo "Starting commit latency test"
 output_path="${pwd}/experiments/${scenario}/logs/epaxos/${arrival}/${replicaBatchSize}/${replicaBatchTime}/${setting}/${pipelineLength}/${conflicts}/${clientWindow}/${clientBatchSize}/${iteration}/commit/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 echo "Removed old local log files"
+
+
+for i in "${machines[@]}"
+do
+   echo "killing instances and removing old files in ${i}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert}  -n -f "$i" "${reset_logs}; ${kill_command}; ${kill_command}; ${kill_command}"
+done
 
 sleep 2
 

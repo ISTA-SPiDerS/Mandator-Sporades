@@ -33,6 +33,12 @@ rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"
 
+for i in "${machines[@]}"
+do
+   echo "killing instances and removing old files in ${i}"
+   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert}  -n -f "$i" "${reset_logs}; ${kill_command}; ${kill_command}; ${kill_command}"
+done
+
 sleep 2
 
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} -n -f ${replica1} ".${remote_algo_path} --asyncSimTimeout ${asyncSimTimeout} --batchSize ${replicaBatchSize} --batchTime ${replicaBatchTime} --benchmarkMode ${benchmarkMode} --config ${remote_config_path} --isAsyncSim  --logFilePath ${remote_log_path} --name 1 --networkbatchTime  ${networkBatchTime} --pipelineLength ${pipelineLength} --timeEpochSize ${asyncTimeEpochSize}  --viewTimeout ${viewTimeout} " >${output_path}1.log &
