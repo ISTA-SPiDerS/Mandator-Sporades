@@ -46,7 +46,7 @@ client1_ip="13.211.26.191"
 client2_ip="52.199.134.27"
 client3_ip="3.35.236.52"
 client4_ip="15.168.13.110"
-client5_ip="13.212.174.190	"
+client5_ip="13.212.174.190"
 
 kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill man_client; pkill man_replica;  pkill pa_ra_replica ; pkill pa_ra_client; pkill pipe_client; pkill pipe_replica; pkill rabia"
 remote_log_path="/home/${user_name}/mandator/logs/"
