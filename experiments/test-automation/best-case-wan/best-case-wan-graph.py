@@ -43,7 +43,6 @@ plt.plot(di_func(paxos_throughput), di_func(paxos_tail), 'g*-', label="Multi\nPa
 plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_tail), 'r*-.', label="Epaxos\nexec")
 plt.plot(di_func(epaxos_commit_throughput), di_func(epaxos_commit_tail), 'c*-', label="Epaxos\ncommit")
 # plt.plot(di_func(raft_throughput), di_func(raft_tail), 'm*-', label="Raft (no pipline)")
-# plt.plot(di_func(mandator_paxos_throughput), di_func(mandator_paxos_tail), 'y*-', label="Mandator Paxos")
 plt.plot(di_func(mandator_async_throughput), di_func(mandator_async_tail), 'k*-', label="Mandator\nSporades")
 plt.plot(di_func(sporades_throughput), di_func(sporades_tail), 'b*-', label="Sporades")
 
@@ -68,7 +67,6 @@ plt.plot(di_func(paxos_throughput), di_func(paxos_latency), 'g*-', label="Multi\
 plt.plot(di_func(epaxos_exec_throughput), di_func(epaxos_exec_latency), 'r*-.', label="Epaxos\nexec")
 plt.plot(di_func(epaxos_commit_throughput), di_func(epaxos_commit_latency), 'c*-', label="Epaxos\ncommit")
 # plt.plot(di_func(raft_throughput), di_func(raft_latency), 'm*-', label="Raft (no pipeline)")
-# plt.plot(di_func(mandator_paxos_throughput), di_func(mandator_paxos_latency), 'y*-', label="Mandator Paxos")
 plt.plot(di_func(mandator_async_throughput), di_func(mandator_async_latency), 'k*-', label="Mandator\nSporades")
 plt.plot(di_func(sporades_throughput), di_func(sporades_latency), 'b*-', label="Sporades")
 
