@@ -63,7 +63,7 @@ def simulatePaxosRaft():
             params["isLeaderKill"]=isLeaderKill
             params["iteration"]=str(iteration)
             runPaxosRaft(params)
-            throughput = getPaxosRaftPerformance("experiments/"+scenario+"/logs/paxos_raft/" + str(arrival) + "/"+ replicaBatchSize + "/"+ replicaBatchTime + "/"+ clientBatchSize + "/"+ clientBatchTime + "/"+ setting + "/"+ pipelineLength + "/"+ "paxos" + "/"+ asyncTimeout + "/"+ benchmarkMode + "/"+ asyncTimeEpochSize + "/"+ viewTimeout + "/"+ clientWindow + "/"+ str(iteration) + "/execution/")
+            throughput = getPaxosRaftPerformance("experiments/"+scenario+"/logs/paxos_raft/" + str(arrival) + "/"+ replicaBatchSize + "/"+ replicaBatchTime + "/"+ clientBatchSize + "/"+ clientBatchTime + "/"+ setting + "/"+ pipelineLength + "/"+ "paxos" + "/"+ asyncTimeout + "/"+ benchmarkMode + "/"+ asyncTimeEpochSize + "/"+ viewTimeout + "/"+ clientWindow + "/"+ str(iteration) + "/execution/", 21, 5)
             print("Multi-Paxos iteration : " + str(iter_num)+", throughput: "+str(throughput))
             sys.stdout.flush()
             if throughput >= 0.9 * (arrival *5):
@@ -92,3 +92,6 @@ def simulatePaxosRaft():
 
     print("Multi-Paxos: throughputs-:"+str(throughputs)+" , average throughput = "+str(sum(throughputs)/3))
     sys.stdout.flush()
+
+
+simulatePaxosRaft()
