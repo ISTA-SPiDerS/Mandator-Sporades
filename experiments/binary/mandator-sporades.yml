@@ -1,0 +1,22 @@
+peers:
+   - name: 1
+     address: 3.27.172.118:10001
+   - name: 2
+     address: 43.207.164.94:10002
+   - name: 3
+     address: 3.38.115.185:10003
+   - name: 4
+     address: 15.168.9.107:10004
+   - name: 5
+     address: 18.143.141.182:10005
+clients:
+   - name: 21
+     address: 13.211.211.125:11001
+   - name: 22
+     address: 43.207.174.187:11002
+   - name: 23
+     address: 54.180.141.22:11003
+   - name: 24
+     address: 13.208.208.215:11004
+   - name: 25
+     address: 54.169.93.166:11005

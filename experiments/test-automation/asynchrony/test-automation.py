@@ -42,7 +42,7 @@ def simulatePaxosRaft():
         iter_num = 0
         while gauge > 10:
             iter_num = iter_num +1
-            arrival = start
+            arrival = int(start)
             # run paxos/raft for this configuration
             params = {}
             params["scenario"]=scenario
@@ -66,7 +66,7 @@ def simulatePaxosRaft():
             throughput = getPaxosRaftPerformance("experiments/"+scenario+"/logs/paxos_raft/" + str(arrival) + "/"+ replicaBatchSize + "/"+ replicaBatchTime + "/"+ clientBatchSize + "/"+ clientBatchTime + "/"+ setting + "/"+ pipelineLength + "/"+ "paxos" + "/"+ asyncTimeout + "/"+ benchmarkMode + "/"+ asyncTimeEpochSize + "/"+ viewTimeout + "/"+ clientWindow + "/"+ str(iteration) + "/execution/", 21, 5)[0]
             print("Multi-Paxos iteration : " + str(iter_num)+", throughput: "+str(throughput))
             sys.stdout.flush()
-            if float(throughput) >= 0.9 * (arrival *5):
+            if float(throughput) >= 0.7 * (arrival *5):
                 if arrival >= MAX_ARRIVAL:
                     throughputs.append(throughput)
                     found = True
@@ -74,17 +74,17 @@ def simulatePaxosRaft():
                 else:
                     last_throughput = throughput
                     start = start + gauge
-                    guage = guage / 2
+                    gauge = gauge / 2
                     continue
-            if float(throughput) < 0.9 * (arrival *5):
+            if float(throughput) < 0.7 * (arrival *5):
                 if arrival < MIN_ARRIVAL:
                     throughputs.append(throughput)
                     found = True
                     break
                 else:
                     last_throughput = throughput
-                    start = start - guage
-                    guage = guage / 2
+                    start = start - gauge
+                    gauge = gauge / 2
                     continue
 
         if not found:
