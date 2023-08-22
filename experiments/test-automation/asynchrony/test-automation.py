@@ -13,7 +13,7 @@ from performance_extract import *
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 
-for asyncTimeout in [str(100), str(600)]:
+for asyncTimeout in [str(300), str(600)]:
     for asyncTimeEpochSize in [str(1000), str(10000)]:
         scenario="asynchrony"
         replicaBatchSize=str(3000)
@@ -124,7 +124,7 @@ for asyncTimeout in [str(100), str(600)]:
             params["isLeaderKill"]=isLeaderKill
             params["iteration"]=str(1)
             runMandator(params)
-            throughput = getManatorSporadesPerformance("experiments/"+scenario+"/logs/mandator"+"/" + str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime+"/"+ setting+"/"+ algo+"/"+ str(30)+"/"+ clientWindow+"/"+ asyncTimeout+"/"+ clientBatchSize+"/"+ clientBatchTime+"/"+ benchmarkMode+"/"+ str(1)+"/"+ asyncTimeEpochSize+"/"+ viewTimeout+"/"+ str(1)+"/execution/", 21, 5)[0]
+            throughput = getManatorSporadesPerformance("experiments/"+scenario+"/logs/mandator"+"/" + str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime+"/"+ setting+"/"+ "async"+"/"+ str(30)+"/"+ clientWindow+"/"+ asyncTimeout+"/"+ clientBatchSize+"/"+ clientBatchTime+"/"+ benchmarkMode+"/"+ str(1)+"/"+ asyncTimeEpochSize+"/"+ viewTimeout+"/"+ str(1)+"/execution/", 21, 5)[0]
             print("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ "Mandator Sporades - iteration: " + str(iter_num)+", throughput: "+str(throughput)+",  arrival: "+str(arrival*5))
             sys.stdout.flush()
 
