@@ -24,7 +24,7 @@ for asyncTimeout in [str(450), str(600)]:
         pipelineLength=str(10)
         benchmarkMode=str(0)
         viewTimeout=str(500000)
-        clientWindow=str(1000)
+        clientWindow=str(10000)
         collectClientLogs="no"
         isLeaderKill="no"
 
@@ -95,7 +95,6 @@ for asyncTimeout in [str(450), str(600)]:
         # mandator
         print("Starting Mandator Sporades")
         sys.stdout.flush()
-        clientWindow = str(10000)
         final_throughput = 0
 
         start = MAX_ARRIVAL
