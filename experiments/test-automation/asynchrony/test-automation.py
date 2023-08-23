@@ -13,8 +13,8 @@ from performance_extract import *
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 
-for asyncTimeout in [str(300), str(600)]:
-    for asyncTimeEpochSize in [str(1000), str(10000)]:
+for asyncTimeout in [str(450), str(600)]:
+    for asyncTimeEpochSize in [str(1000), str(2000)]:
         scenario="asynchrony"
         replicaBatchSize=str(3000)
         replicaBatchTime=str(5000)
@@ -42,7 +42,7 @@ for asyncTimeout in [str(300), str(600)]:
 
             final_throughput = 0
 
-            start = MIN_ARRIVAL
+            start = MAX_ARRIVAL
             gauge = INIT_GUAGE
             last_throughput = -1
             iter_num = 0
@@ -93,10 +93,10 @@ for asyncTimeout in [str(300), str(600)]:
         # mandator
         print("Starting Mandator Sporades")
         sys.stdout.flush()
-
+        clientWindow = str(10000)
         final_throughput = 0
 
-        start = MIN_ARRIVAL
+        start = MAX_ARRIVAL
         gauge = INIT_GUAGE
         last_throughput = -1
         iter_num = 0
@@ -111,7 +111,7 @@ for asyncTimeout in [str(300), str(600)]:
             params["replicaBatchTime"]=replicaBatchTime
             params["setting"]=setting
             params["algo"]="async"
-            params["networkBatchTime"]=str(30)
+            params["networkBatchTime"]=str(10)
             params["clientWindow"]=clientWindow
             params["asyncSimTime"]=asyncTimeout
             params["clientBatchSize"]=clientBatchSize
@@ -124,7 +124,7 @@ for asyncTimeout in [str(300), str(600)]:
             params["isLeaderKill"]=isLeaderKill
             params["iteration"]=str(1)
             runMandator(params)
-            throughput = getManatorSporadesPerformance("experiments/"+scenario+"/logs/mandator"+"/" + str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime+"/"+ setting+"/"+ "async"+"/"+ str(30)+"/"+ clientWindow+"/"+ asyncTimeout+"/"+ clientBatchSize+"/"+ clientBatchTime+"/"+ benchmarkMode+"/"+ str(1)+"/"+ asyncTimeEpochSize+"/"+ viewTimeout+"/"+ str(1)+"/execution/", 21, 5)[0]
+            throughput = getManatorSporadesPerformance("experiments/"+scenario+"/logs/mandator"+"/" + str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime+"/"+ setting+"/"+ "async"+"/"+ str(10)+"/"+ clientWindow+"/"+ asyncTimeout+"/"+ clientBatchSize+"/"+ clientBatchTime+"/"+ benchmarkMode+"/"+ str(1)+"/"+ asyncTimeEpochSize+"/"+ viewTimeout+"/"+ str(1)+"/execution/", 21, 5)[0]
             print("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ "Mandator Sporades - iteration: " + str(iter_num)+", throughput: "+str(throughput)+",  arrival: "+str(arrival*5))
             sys.stdout.flush()
 
@@ -151,7 +151,7 @@ for asyncTimeout in [str(300), str(600)]:
 
         final_throughput = 0
 
-        start = MIN_ARRIVAL
+        start = MAX_ARRIVAL
         gauge = INIT_GUAGE
         last_throughput = -1
         iter_num = 0
