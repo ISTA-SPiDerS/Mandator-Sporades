@@ -82,6 +82,8 @@ for asyncTimeout in [str(450), str(600)]:
                     continue
                 if float(throughput) < 0.8 * (arrival *5):
                     start = start - gauge
+                    if start <= 0:
+                        start = 100
                     gauge = gauge / 2
                     continue
 
@@ -137,6 +139,8 @@ for asyncTimeout in [str(450), str(600)]:
                 continue
             if float(throughput) < 0.8 * (arrival *5):
                 start = start - gauge
+                if start <= 0:
+                    start = 100
                 gauge = gauge / 2
                 continue
 
@@ -191,6 +195,8 @@ for asyncTimeout in [str(450), str(600)]:
                 continue
             if float(throughput) < 0.8 * (arrival *5):
                 start = start - gauge
+                if start <= 0:
+                    start = 100
                 gauge = gauge / 2
                 continue
 
