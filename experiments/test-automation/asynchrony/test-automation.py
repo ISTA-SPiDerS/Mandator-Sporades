@@ -13,8 +13,8 @@ from performance_extract import *
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 
-for asyncTimeout in [str(450), str(600)]:
-    for asyncTimeEpochSize in [str(1000), str(2000)]:
+for asyncTimeout in [str(700), str(1000)]:
+    for asyncTimeEpochSize in [str(250), str(500)]:
         scenario="asynchrony"
         replicaBatchSize=str(3000)
         replicaBatchTime=str(5000)
@@ -30,7 +30,7 @@ for asyncTimeout in [str(450), str(600)]:
 
 
         MIN_ARRIVAL = 100
-        MAX_ARRIVAL = 80000
+        MAX_ARRIVAL = 40000
         INIT_GUAGE = MAX_ARRIVAL - MIN_ARRIVAL
 
         # multi-paxos and raft
