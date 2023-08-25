@@ -13,8 +13,8 @@ from performance_extract import *
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
 
-for asyncTimeout in [str(700), str(1000)]:
-    for asyncTimeEpochSize in [str(250), str(500)]:
+for asyncTimeout in [str(500)]:
+    for asyncTimeEpochSize in [str(200), str(400)]:
         scenario="asynchrony"
         replicaBatchSize=str(3000)
         replicaBatchTime=str(5000)
@@ -31,7 +31,7 @@ for asyncTimeout in [str(700), str(1000)]:
 
         MIN_ARRIVAL = 100
         MAX_ARRIVAL = 40000
-        INIT_GUAGE = MAX_ARRIVAL - MIN_ARRIVAL
+        INIT_GUAGE = int((MAX_ARRIVAL - MIN_ARRIVAL)/2)
 
         # multi-paxos and raft
 
@@ -46,7 +46,7 @@ for asyncTimeout in [str(700), str(1000)]:
             gauge = INIT_GUAGE
             last_throughput = -1
             iter_num = 0
-            while gauge > 900:
+            while gauge > 400:
                 iter_num = iter_num +1
                 arrival = int(start)
 
@@ -83,7 +83,7 @@ for asyncTimeout in [str(700), str(1000)]:
                 if float(throughput) < 0.8 * (arrival *5):
                     start = start - gauge
                     if start <= 0:
-                        start = 100
+                        start = 1000
                     gauge = gauge / 2
                     continue
 
@@ -101,7 +101,7 @@ for asyncTimeout in [str(700), str(1000)]:
         gauge = INIT_GUAGE
         last_throughput = -1
         iter_num = 0
-        while gauge > 900:
+        while gauge > 400:
             iter_num = iter_num +1
             arrival = int(start)
             # run mandator for this configuration
@@ -139,7 +139,7 @@ for asyncTimeout in [str(700), str(1000)]:
             if float(throughput) < 0.8 * (arrival *5):
                 start = start - gauge
                 if start <= 0:
-                    start = 100
+                    start = 1000
                 gauge = gauge / 2
                 continue
 
@@ -158,7 +158,7 @@ for asyncTimeout in [str(700), str(1000)]:
         gauge = INIT_GUAGE
         last_throughput = -1
         iter_num = 0
-        while gauge > 900:
+        while gauge > 400:
             iter_num = iter_num +1
             arrival = int(start)
             # run sporades for this configuration
@@ -195,7 +195,7 @@ for asyncTimeout in [str(700), str(1000)]:
             if float(throughput) < 0.8 * (arrival *5):
                 start = start - gauge
                 if start <= 0:
-                    start = 100
+                    start = 1000
                 gauge = gauge / 2
                 continue
 
