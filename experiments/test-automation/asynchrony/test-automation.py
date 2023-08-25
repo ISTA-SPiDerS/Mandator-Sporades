@@ -14,7 +14,7 @@ os.system("/bin/bash experiments/setup-5/setup.sh")
 
 
 for asyncTimeout in [str(500)]:
-    for asyncTimeEpochSize in [str(200), str(400)]:
+    for asyncTimeEpochSize in [str(500), str(750)]:
         scenario="asynchrony"
         replicaBatchSize=str(3000)
         replicaBatchTime=str(5000)
