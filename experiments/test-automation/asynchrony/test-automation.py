@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -11,10 +12,11 @@ from performance_extract import *
 
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
+f = open("async-performance-"+str(datetime.now())+".log", "a")
 
 
-for asyncTimeout in [str(500)]:
-    for asyncTimeEpochSize in [str(500), str(750)]:
+for asyncTimeout in [str(700)]:
+    for asyncTimeEpochSize in [str(100), str(250)]:
         scenario="asynchrony"
         replicaBatchSize=str(3000)
         replicaBatchTime=str(5000)
@@ -30,14 +32,14 @@ for asyncTimeout in [str(500)]:
 
 
         MIN_ARRIVAL = 100
-        MAX_ARRIVAL = 40000
+        MAX_ARRIVAL = 30000
         INIT_GUAGE = int((MAX_ARRIVAL - MIN_ARRIVAL)/2)
 
         # multi-paxos and raft
 
         for algo in ["paxos", "raft"]:
 
-            print("Starting "+algo)
+            f.write("Starting "+algo)
             sys.stdout.flush()
 
             final_throughput = 0
@@ -50,27 +52,33 @@ for asyncTimeout in [str(500)]:
                 iter_num = iter_num +1
                 arrival = int(start)
 
-                params = {}
-                params["scenario"]=scenario
-                params["arrival"]=str(arrival)
-                params["replicaBatchSize"]=replicaBatchSize
-                params["replicaBatchTime"] = replicaBatchTime
-                params["clientBatchSize"]=clientBatchSize
-                params["clientBatchTime"]=clientBatchTime
-                params["setting"]=setting
-                params["pipelineLength"]=pipelineLength
-                params["algo"]=algo
-                params["asyncTimeout"]=asyncTimeout
-                params["benchmarkMode"]=benchmarkMode
-                params["asyncTimeEpochSize"]=asyncTimeEpochSize
-                params["viewTimeout"]=viewTimeout
-                params["clientWindow"]=clientWindow
-                params["collectClientLogs"]=collectClientLogs
-                params["isLeaderKill"]=isLeaderKill
-                params["iteration"]=str(1)
-                runPaxosRaft(params)
-                throughput = getPaxosRaftPerformance("experiments/"+scenario+"/logs/paxos_raft/" + str(arrival) + "/"+ replicaBatchSize + "/"+ replicaBatchTime + "/"+ clientBatchSize + "/"+ clientBatchTime + "/"+ setting + "/"+ pipelineLength + "/"+ algo + "/"+ asyncTimeout + "/"+ benchmarkMode + "/"+ asyncTimeEpochSize + "/"+ viewTimeout + "/"+ clientWindow + "/"+ str(1) + "/execution/", 21, 5)[0]
-                print( "async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ " --- " + algo + " - iteration: " + str(iter_num)+", throughput: "+str(throughput)+", arrival: "+str(arrival*5))
+                throughputs = []
+
+                for i in [1,2,3]:
+                    params = {}
+                    params["scenario"]=scenario
+                    params["arrival"]=str(arrival)
+                    params["replicaBatchSize"]=replicaBatchSize
+                    params["replicaBatchTime"] = replicaBatchTime
+                    params["clientBatchSize"]=clientBatchSize
+                    params["clientBatchTime"]=clientBatchTime
+                    params["setting"]=setting
+                    params["pipelineLength"]=pipelineLength
+                    params["algo"]=algo
+                    params["asyncTimeout"]=asyncTimeout
+                    params["benchmarkMode"]=benchmarkMode
+                    params["asyncTimeEpochSize"]=asyncTimeEpochSize
+                    params["viewTimeout"]=viewTimeout
+                    params["clientWindow"]=clientWindow
+                    params["collectClientLogs"]=collectClientLogs
+                    params["isLeaderKill"]=isLeaderKill
+                    params["iteration"]=str(i)
+                    runPaxosRaft(params)
+                    throughputs.append(getPaxosRaftPerformance("experiments/"+scenario+"/logs/paxos_raft/" + str(arrival) + "/"+ replicaBatchSize + "/"+ replicaBatchTime + "/"+ clientBatchSize + "/"+ clientBatchTime + "/"+ setting + "/"+ pipelineLength + "/"+ algo + "/"+ asyncTimeout + "/"+ benchmarkMode + "/"+ asyncTimeEpochSize + "/"+ viewTimeout + "/"+ clientWindow + "/"+ str(i) + "/execution/", 21, 5)[0])
+
+                throughputs = remove_farthest_from_median(throughputs, 1)
+                throughput = sum(throughputs)/2
+                f.write( "async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ " --- " + algo + " - iteration: " + str(iter_num)+", throughput: "+str(throughput)+", arrival: "+str(arrival*5))
                 sys.stdout.flush()
 
                 if throughput > last_throughput:
@@ -89,11 +97,11 @@ for asyncTimeout in [str(500)]:
 
             final_throughput  = last_throughput
 
-            print("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+"---" + algo + " final throughput - "+str(final_throughput))
+            f.write("async timeout: " + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+" --- " + algo + " final throughput - "+str(final_throughput))
             sys.stdout.flush()
 
         # mandator
-        print("Starting Mandator Sporades")
+        f.write("Starting Mandator Sporades")
         sys.stdout.flush()
         final_throughput = 0
 
@@ -104,29 +112,36 @@ for asyncTimeout in [str(500)]:
         while gauge > 400:
             iter_num = iter_num +1
             arrival = int(start)
-            # run mandator for this configuration
-            params = {}
-            params["scenario"]=scenario
-            params["arrival"]=str(arrival)
-            params["replicaBatchSize"]=replicaBatchSize
-            params["replicaBatchTime"]=replicaBatchTime
-            params["setting"]=setting
-            params["algo"]="async"
-            params["networkBatchTime"]=str(10)
-            params["clientWindow"]=clientWindow
-            params["asyncSimTime"]=asyncTimeout
-            params["clientBatchSize"]=clientBatchSize
-            params["clientBatchTime"]=clientBatchTime
-            params["benchmarkMode"]=benchmarkMode
-            params["broadcastMode"]=str(1)
-            params["asyncTimeEpochSize"]=asyncTimeEpochSize
-            params["viewTimeout"]=viewTimeout
-            params["collectClientLogs"]=collectClientLogs
-            params["isLeaderKill"]=isLeaderKill
-            params["iteration"]=str(1)
-            runMandator(params)
-            throughput = getManatorSporadesPerformance("experiments/"+scenario+"/logs/mandator"+"/" + str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime+"/"+ setting+"/"+ "async"+"/"+ str(10)+"/"+ clientWindow+"/"+ asyncTimeout+"/"+ clientBatchSize+"/"+ clientBatchTime+"/"+ benchmarkMode+"/"+ str(1)+"/"+ asyncTimeEpochSize+"/"+ viewTimeout+"/"+ str(1)+"/execution/", 21, 5)[0]
-            print("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ "Mandator Sporades - iteration: " + str(iter_num)+", throughput: "+str(throughput)+",  arrival: "+str(arrival*5))
+
+            throughputs = []
+
+            for i in [1,2,3]:
+                # run mandator for this configuration
+                params = {}
+                params["scenario"]=scenario
+                params["arrival"]=str(arrival)
+                params["replicaBatchSize"]=replicaBatchSize
+                params["replicaBatchTime"]=replicaBatchTime
+                params["setting"]=setting
+                params["algo"]="async"
+                params["networkBatchTime"]=str(10)
+                params["clientWindow"]=clientWindow
+                params["asyncSimTime"]=asyncTimeout
+                params["clientBatchSize"]=clientBatchSize
+                params["clientBatchTime"]=clientBatchTime
+                params["benchmarkMode"]=benchmarkMode
+                params["broadcastMode"]=str(1)
+                params["asyncTimeEpochSize"]=asyncTimeEpochSize
+                params["viewTimeout"]=viewTimeout
+                params["collectClientLogs"]=collectClientLogs
+                params["isLeaderKill"]=isLeaderKill
+                params["iteration"]=str(i)
+                runMandator(params)
+                throughputs.append(getManatorSporadesPerformance("experiments/"+scenario+"/logs/mandator"+"/" + str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime+"/"+ setting+"/"+ "async"+"/"+ str(10)+"/"+ clientWindow+"/"+ asyncTimeout+"/"+ clientBatchSize+"/"+ clientBatchTime+"/"+ benchmarkMode+"/"+ str(1)+"/"+ asyncTimeEpochSize+"/"+ viewTimeout+"/"+ str(i)+"/execution/", 21, 5)[0])
+
+            throughputs = remove_farthest_from_median(throughputs, 1)
+            throughput = sum(throughputs)/2
+            f.write("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ " Mandator Sporades - iteration: " + str(iter_num)+", throughput: "+str(throughput)+", arrival: "+str(arrival*5))
             sys.stdout.flush()
 
             if throughput > last_throughput:
@@ -145,11 +160,11 @@ for asyncTimeout in [str(500)]:
 
         final_throughput  = last_throughput
 
-        print("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ " --- mandator sporades final: throughput- "+str(final_throughput))
+        f.write("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+ " --- mandator sporades final: throughput- "+str(final_throughput))
         sys.stdout.flush()
 
         # sporades
-        print("Starting Pipelined Sporades")
+        f.write("Starting Pipelined Sporades")
         sys.stdout.flush()
 
         final_throughput = 0
@@ -161,28 +176,38 @@ for asyncTimeout in [str(500)]:
         while gauge > 400:
             iter_num = iter_num +1
             arrival = int(start)
-            # run sporades for this configuration
-            params = {}
-            params["scenario"]=scenario
-            params["arrival"]=str(arrival)
-            params["replicaBatchSize"]=replicaBatchSize
-            params["replicaBatchTime"]=replicaBatchTime
-            params["clientBatchSize"]=clientBatchSize
-            params["clientBatchTime"]=clientBatchTime
-            params["clientWindow"]=clientWindow
-            params["asyncSimTimeout"]=asyncTimeout
-            params["asyncTimeEpochSize"]=asyncTimeEpochSize
-            params["benchmarkMode"]=benchmarkMode
-            params["viewTimeout"]=viewTimeout
-            params["setting"]=setting
-            params["networkBatchTime"]=str(0)
-            params["pipelineLength"]=pipelineLength
-            params["collectClientLogs"]=collectClientLogs
-            params["isLeaderKill"]=isLeaderKill
-            params["iteration"]=str(1)
-            runSporades(params)
-            throughput = getManatorSporadesPerformance("experiments/"+scenario+"/logs/sporades/"+str(arrival)+"/"+replicaBatchSize+"/"+replicaBatchTime+"/"+clientBatchSize+"/"+clientBatchTime+"/"+clientWindow+"/"+asyncTimeout+"/"+asyncTimeEpochSize+"/"+benchmarkMode+"/"+viewTimeout+"/"+setting+"/"+str(0)+"/"+pipelineLength+"/"+str(1)+"/execution/", 21, 5)[0]
-            print("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize) + "Pipelined Sporades - iteration: " + str(iter_num)+", throughput: "+str(throughput)+",  arrival: "+str(arrival*5))
+
+            throughputs = []
+
+            for i in [1,2,3]:
+                # run sporades for this configuration
+                params = {}
+                params["scenario"]=scenario
+                params["arrival"]=str(arrival)
+                params["replicaBatchSize"]=replicaBatchSize
+                params["replicaBatchTime"]=replicaBatchTime
+                params["clientBatchSize"]=clientBatchSize
+                params["clientBatchTime"]=clientBatchTime
+                params["clientWindow"]=clientWindow
+                params["asyncSimTimeout"]=asyncTimeout
+                params["asyncTimeEpochSize"]=asyncTimeEpochSize
+                params["benchmarkMode"]=benchmarkMode
+                params["viewTimeout"]=viewTimeout
+                params["setting"]=setting
+                params["networkBatchTime"]=str(0)
+                params["pipelineLength"]=pipelineLength
+                params["collectClientLogs"]=collectClientLogs
+                params["isLeaderKill"]=isLeaderKill
+                params["iteration"]=str(i)
+                runSporades(params)
+                throughputs.append(getManatorSporadesPerformance("experiments/"+scenario+"/logs/sporades/"+str(arrival)+"/"+replicaBatchSize+"/"+replicaBatchTime+"/"+clientBatchSize+"/"+clientBatchTime+"/"+clientWindow+"/"+asyncTimeout+"/"+asyncTimeEpochSize+"/"+benchmarkMode+"/"+viewTimeout+"/"+setting+"/"+str(0)+"/"+pipelineLength+"/"+str(i)+"/execution/", 21, 5)[0])
+
+
+
+            throughputs = remove_farthest_from_median(throughputs, 1)
+            throughput = sum(throughputs)/2
+
+            f.write("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize: " + str(asyncTimeEpochSize) + " Pipelined Sporades - iteration: " + str(iter_num)+", throughput: "+str(throughput)+",  arrival: "+str(arrival*5))
             sys.stdout.flush()
 
             if throughput > last_throughput:
@@ -201,8 +226,10 @@ for asyncTimeout in [str(500)]:
 
         final_throughput  = last_throughput
 
-        print("async timeout:" + str(asyncTimeout)+", asyncTimeEpochSize:" + str(asyncTimeEpochSize)+"--- pipelined sporades  final: throughput- "+str(final_throughput))
+        f.write("async timeout: " + str(asyncTimeout)+", asyncTimeEpochSize: " + str(asyncTimeEpochSize)+" --- pipelined sporades  final: throughput- "+str(final_throughput))
         sys.stdout.flush()
 
 
-print("-----Experiment Finished-----")
+f.write("-----Experiment Finished-----")
+
+f.close()
