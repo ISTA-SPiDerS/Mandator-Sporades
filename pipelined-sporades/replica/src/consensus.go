@@ -470,10 +470,7 @@ func (rp *Replica) handleConsensusExternalResponseMessage(message *proto.Pipelin
 
 func (rp *Replica) makeNChain(blockOri *proto.Pipelined_Sporades_Block, n int) *proto.Pipelined_Sporades_Block {
 
-	block, err := CloneMyStruct(blockOri)
-	if err != nil {
-		panic(err.Error())
-	}
+	block := rp.CloneMyStruct(blockOri)
 	head := block
 
 	for n >= 0 {
@@ -486,10 +483,7 @@ func (rp *Replica) makeNChain(blockOri *proto.Pipelined_Sporades_Block, n int) *
 		if !ok {
 			return head
 		}
-		b, err = CloneMyStruct(b)
-		if err != nil {
-			panic(err.Error())
-		}
+		b = rp.CloneMyStruct(b)
 
 		block.Parent = b
 		block = block.Parent
@@ -499,7 +493,7 @@ func (rp *Replica) makeNChain(blockOri *proto.Pipelined_Sporades_Block, n int) *
 }
 
 /*
-	Deep copy a consensus block
+	Deep copy a consensus block using JSON: Depricated
 */
 
 func CloneMyStructJson(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Sporades_Block, error) {
@@ -518,7 +512,12 @@ func CloneMyStructJson(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_S
 	manual copy a consensus block
 */
 
-func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Sporades_Block, error) {
+func (rp *Replica) CloneMyStruct(orig *proto.Pipelined_Sporades_Block) *proto.Pipelined_Sporades_Block {
+
+	if orig.Parent != nil {
+		rp.consensus.consensusPool.Add(orig.Parent)
+	}
+
 	rtnBlc := &proto.Pipelined_Sporades_Block{
 		Id:       orig.Id,
 		V:        orig.V,
@@ -529,7 +528,7 @@ func CloneMyStruct(orig *proto.Pipelined_Sporades_Block) (*proto.Pipelined_Spora
 		Level:    orig.Level,
 	}
 
-	return rtnBlc, nil
+	return rtnBlc
 }
 
 // copies the replica batch

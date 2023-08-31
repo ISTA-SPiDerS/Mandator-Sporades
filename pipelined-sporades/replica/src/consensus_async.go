@@ -6,7 +6,6 @@ import (
 	"pipelined-sporades/proto"
 	"strconv"
 	"strings"
-	"time"
 )
 
 /*
@@ -87,15 +86,6 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 				// save the new block in the store
 				rp.consensus.consensusPool.Add(&newLevel1FallBackBlock)
 
-				if rp.isAsynchronous {
-
-					epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
-
-					if rp.amIAttacked(int(epoch)) {
-						time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
-					}
-				}
-
 				//	broadcast <propose-async, B f1>
 				for name, _ := range rp.replicaAddrList {
 
@@ -157,6 +147,9 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 			if rp.hasGreaterRank(message.BlockNew.V, message.BlockNew.R, rp.consensus.vCurr, rp.consensus.rCurr) {
 				// save the block in the store
 				rp.consensus.consensusPool.Add(message.BlockNew)
+				vote_block_new := rp.CloneMyStruct(message.BlockNew)
+				vote_block_new.Parent = nil
+				vote_block_new.Commands = nil
 				// send <vote-async, B, h> to p
 				voteAsyncMsg := proto.Pipelined_Sporades{
 					Sender:      rp.name,
@@ -167,7 +160,7 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 					V:           rp.consensus.vCurr,
 					R:           rp.consensus.rCurr,
 					BlockHigh:   nil,
-					BlockNew:    message.BlockNew,
+					BlockNew:    vote_block_new,
 					BlockCommit: nil,
 				}
 
@@ -241,15 +234,6 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 
 							// save the new block in the store
 							rp.consensus.consensusPool.Add(&newLevel2FallBackBlock)
-
-							if rp.isAsynchronous {
-
-								epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
-
-								if rp.amIAttacked(int(epoch)) {
-									time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
-								}
-							}
 
 							//	broadcast <propose-async, B f2>
 
@@ -366,15 +350,6 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 
 				rp.consensus.consensusPool.Add(&newLevel2FallBackBlock)
 
-				if rp.isAsynchronous {
-
-					epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
-
-					if rp.amIAttacked(int(epoch)) {
-						time.Sleep(time.Duration(rp.asyncSimTimeout) * time.Millisecond)
-					}
-				}
-
 				//	broadcast <propose-async, B f2 , self.id, 2>
 				for name, _ := range rp.replicaAddrList {
 
@@ -405,7 +380,7 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 				rp.consensus.sentLevel2Block[rp.consensus.vCurr] = true
 
 			} else if message.BlockNew.Level == 2 {
-
+				level_2_block, _ := rp.consensus.consensusPool.Get(message.BlockNew.Id)
 				// broadcast <fallback-complete, B, v cur , self.id>
 				for name, _ := range rp.replicaAddrList {
 
@@ -418,7 +393,7 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.Pipelined_Sporades) b
 						V:           rp.consensus.vCurr,
 						R:           message.BlockNew.R,
 						BlockHigh:   nil,
-						BlockNew:    message.BlockNew,
+						BlockNew:    level_2_block,
 						BlockCommit: nil,
 					}
 

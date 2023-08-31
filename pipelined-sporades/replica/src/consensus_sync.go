@@ -120,10 +120,8 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 				rp.debug("Sending sync vote to "+strconv.Itoa(int(nextLeader)), 1)
 			}
 
-			vote_block_high, err := CloneMyStruct(rp.consensus.blockHigh)
-			if err != nil {
-				panic(err.Error())
-			}
+			vote_block_high := rp.CloneMyStruct(rp.consensus.blockHigh)
+
 			vote_block_high.Commands.Requests = nil
 			voteMsg := proto.Pipelined_Sporades{
 				Sender:      rp.name,
@@ -312,7 +310,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 			rp.debug("broadcasting propose type 1 "+fmt.Sprintf("%v", newBlock), 0)
 		}
 
-		if rp.isAsynchronous {
+		if rp.isAsynchronousSimulation {
 
 			epoch := time.Now().Sub(rp.consensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
 
@@ -335,7 +333,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 				R:           rp.consensus.rCurr + 1,
 				BlockHigh:   nil,
 				BlockNew:    &newBlock,
-				BlockCommit: rp.consensus.blockCommit,
+				BlockCommit: rp.CloneMyStruct(rp.consensus.blockCommit),
 			}
 
 			rpcPair := common.RPCPair{
@@ -367,10 +365,8 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 			rp.debug("Sending sync vote to self", 0)
 		}
 
-		vote_block_high, err := CloneMyStruct(rp.consensus.blockHigh)
-		if err != nil {
-			panic(err)
-		}
+		vote_block_high := rp.CloneMyStruct(rp.consensus.blockHigh)
+
 		vote_block_high.Parent = nil
 
 		voteMsg := proto.Pipelined_Sporades{

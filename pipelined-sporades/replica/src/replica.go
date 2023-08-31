@@ -66,10 +66,10 @@ type Replica struct {
 
 	rejectedCount int // number of messages rejected because self is still not updated to a rank
 
-	isAsynchronous       bool
-	asyncSimTimeout      int
-	asynchronousReplicas map[int][]int // for each time based epoch, the minority replicas that are attacked
-	timeEpochSize        int           // how many ms for a given time epoch
+	isAsynchronousSimulation bool
+	asyncSimTimeout          int
+	asynchronousReplicas     map[int][]int // for each time based epoch, the minority replicas that are attacked
+	timeEpochSize            int           // how many ms for a given time epoch
 }
 
 const incomingBufferSize = 1000000 // the size of the buffer which receives all the incoming messages
@@ -115,17 +115,17 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 		viewTimeout:      viewTimeout,
 		logPrinted:       false,
 
-		benchmarkMode:        benchmarkMode,
-		state:                Init(benchmarkMode, name, keyLen, valLen),
-		incomingRequests:     make([]*proto.ClientBatch, 0),
-		pipelineLength:       pipelineLength,
-		finished:             false,
-		networkbatchTime:     networkbatchTime,
-		rejectedCount:        0,
-		isAsynchronous:       isAsyncSim,
-		asyncSimTimeout:      asyncSimTimeout,
-		asynchronousReplicas: make(map[int][]int),
-		timeEpochSize:        timeEpochSize,
+		benchmarkMode:            benchmarkMode,
+		state:                    Init(benchmarkMode, name, keyLen, valLen),
+		incomingRequests:         make([]*proto.ClientBatch, 0),
+		pipelineLength:           pipelineLength,
+		finished:                 false,
+		networkbatchTime:         networkbatchTime,
+		rejectedCount:            0,
+		isAsynchronousSimulation: isAsyncSim,
+		asyncSimTimeout:          asyncSimTimeout,
+		asynchronousReplicas:     make(map[int][]int),
+		timeEpochSize:            timeEpochSize,
 	}
 
 	// initialize clientAddrList
@@ -155,7 +155,7 @@ func New(name int32, cfg *configuration.InstanceConfig, logFilePath string, repl
 	}
 	rp.consensus = InitAsyncConsensus(debugLevel, debugOn, rp.numReplicas)
 
-	if rp.isAsynchronous {
+	if rp.isAsynchronousSimulation {
 		// initialize the attack replicas for each time epoch, we assume a total number of time of the run to be 10 minutes just for convenience, but this does not affect the correctness
 		numEpochs := 10 * 60 * 1000 / rp.timeEpochSize
 		s2 := rand.NewSource(39)

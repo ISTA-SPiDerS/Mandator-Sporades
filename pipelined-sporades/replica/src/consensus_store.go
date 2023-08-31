@@ -61,13 +61,23 @@ func (ms *AsyncConsensusStore) Add(block *proto.Pipelined_Sporades_Block) {
 
 	if block.Parent != nil {
 		ms.Add(block.Parent)
-		block.Parent = nil
 	}
 
 	_, ok := ms.ConsensusBlocks[block.Id]
 	if !ok {
+
+		newBlc := &proto.Pipelined_Sporades_Block{
+			Id:       block.Id,
+			V:        block.V,
+			R:        block.R,
+			ParentId: block.ParentId,
+			Parent:   nil,
+			Commands: DuplicateCommands(block.Commands),
+			Level:    block.Level,
+		}
+
 		ms.ConsensusBlocks[block.Id] = AsynConsensusBlock{
-			ConsensusBlock: block,
+			ConsensusBlock: newBlc,
 			acks:           make([]int32, 0),
 		}
 		if ms.debugOn {
