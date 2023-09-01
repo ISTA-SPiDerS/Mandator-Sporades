@@ -43,7 +43,7 @@ func (cl *Client) ConnectToReplicas() {
 				break
 			} else {
 				if counter == 1000000 {
-					panic(fmt.Sprintf("%v", err))
+					panic(fmt.Sprintf("cannot reach replicas %v", err))
 				}
 			}
 		}
@@ -63,7 +63,7 @@ func (cl *Client) WaitForConnections() {
 		bs := b[:4]
 		Listener, err := net.Listen("tcp", cl.clientListenAddress)
 		if err != nil {
-			panic("should not happen " + fmt.Sprintf("%v", err))
+			panic("error listening to 0.0.0.0 " + fmt.Sprintf("%v", err))
 		}
 		if cl.debugOn {
 			cl.debug("Listening to incoming connection on "+cl.clientListenAddress, 0)
