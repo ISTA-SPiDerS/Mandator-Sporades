@@ -49,7 +49,8 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 				tempBlockHigh := rp.extractHighestRankedBlockHigh(timeouts)
 				if rp.hasGreaterRank(tempBlockHigh.V, tempBlockHigh.R, rp.consensus.blockHigh.V, rp.consensus.blockHigh.R) {
 					//	set vCur, rCur to v, max(r cur , block high .r)
-					rp.consensus.blockHigh = tempBlockHigh
+					rp.consensus.consensusPool.Add(tempBlockHigh)
+					rp.consensus.blockHigh = rp.CloneMyStruct(tempBlockHigh)
 					rp.consensus.rCurr = rp.consensus.blockHigh.R
 				}
 				rp.consensus.vCurr = message.V
@@ -112,9 +113,6 @@ func (rp *Replica) handleConsensusTimeout(message *proto.Pipelined_Sporades) boo
 						rp.debug("Sent propose-async level 1 to "+strconv.Itoa(int(name)), 1)
 					}
 				}
-
-				rp.consensus.sentLevel2Block[message.V] = false
-
 			}
 			return true
 		} else {
@@ -148,7 +146,6 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.Pipelined_Sporades
 				// save the block in the store
 				rp.consensus.consensusPool.Add(message.BlockNew)
 				vote_block_new := rp.CloneMyStruct(message.BlockNew)
-				vote_block_new.Parent = nil
 				vote_block_new.Commands = nil
 				// send <vote-async, B, h> to p
 				voteAsyncMsg := proto.Pipelined_Sporades{
@@ -454,7 +451,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 				if rp.debugOn {
 					rp.debug("Possible leader node for the view "+strconv.Itoa(int(rp.consensus.vCurr))+" is "+strconv.Itoa(leaderNode), 1)
 				}
-				// if height 2 block by leader exists in the first n-f height 2 blocks received in the fallback messages
+				// if height 2 block by leader exists in the first n-f fallback height 2 blocks received in the fallback messages
 				height2ConfirmedLeaderBlockExists := false
 				var height2ConfirmedLeaderBlock *proto.Pipelined_Sporades_Block
 				for j := 0; j < len(rp.consensus.bFall[key]); j++ {
@@ -467,11 +464,11 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 				}
 				if height2ConfirmedLeaderBlockExists {
 					//	Set block high, block commit to height 2 block from l
-					rp.consensus.blockHigh = height2ConfirmedLeaderBlock
+					rp.consensus.blockHigh = rp.CloneMyStruct(height2ConfirmedLeaderBlock)
 					rp.consensus.rCurr = rp.consensus.blockHigh.R
 					if rp.hasGreaterRank(height2ConfirmedLeaderBlock.V, height2ConfirmedLeaderBlock.R, rp.consensus.blockCommit.V, rp.consensus.blockCommit.R) &&
 						rp.hasGreaterRank(height2ConfirmedLeaderBlock.V, height2ConfirmedLeaderBlock.R, rp.consensus.lastCommittedBlock.V, rp.consensus.lastCommittedBlock.R) {
-						rp.consensus.blockCommit = height2ConfirmedLeaderBlock
+						rp.consensus.blockCommit = rp.CloneMyStruct(height2ConfirmedLeaderBlock)
 						rp.updateSMR()
 					}
 					if rp.debugOn {
@@ -499,7 +496,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.Pipelin
 							}
 						}
 						if height2LeaderBlockExists {
-							rp.consensus.blockHigh = height2LeaderBlock
+							rp.consensus.blockHigh = rp.CloneMyStruct(height2LeaderBlock)
 							rp.consensus.rCurr = rp.consensus.blockHigh.R
 							rp.consensus.vCurr = message.V
 							if rp.debugOn {
