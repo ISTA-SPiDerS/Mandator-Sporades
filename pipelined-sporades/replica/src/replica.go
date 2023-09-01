@@ -62,7 +62,7 @@ type Replica struct {
 	pipelineLength   int
 
 	finished         bool // to finish consensus
-	networkbatchTime int  // network level batchTime in milli seconds
+	networkbatchTime int  // network level batchTime in "milli" seconds
 
 	rejectedCount int // number of messages rejected because self is still not updated to a rank
 

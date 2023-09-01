@@ -20,7 +20,10 @@ func (rp *Replica) WaitForConnections() {
 	go func() {
 		var b [4]byte
 		bs := b[:4]
-		Listener, _ := net.Listen("tcp", rp.listenAddress)
+		Listener, err := net.Listen("tcp", rp.listenAddress)
+		if err != nil {
+			panic(err.Error())
+		}
 		if rp.debugOn {
 			rp.debug("Listening to incoming connections on "+rp.listenAddress, 0)
 		}
