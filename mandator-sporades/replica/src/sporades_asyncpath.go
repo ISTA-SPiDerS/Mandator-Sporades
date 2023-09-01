@@ -61,14 +61,6 @@ func (rp *Replica) handleConsensusTimeout(message *proto.AsyncConsensus) {
 
 				// save the new block in the store
 				rp.asyncConsensus.consensusPool.Add(&newLevel1FallBackBlock)
-				if rp.isAsynchronous {
-
-					epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
-
-					if rp.amIAttacked(int(epoch)) {
-						time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
-					}
-				}
 				//	broadcast <propose-async, B f1>
 				for name, _ := range rp.replicaAddrList {
 
@@ -197,15 +189,6 @@ func (rp *Replica) handleConsensusProposeAsync(message *proto.AsyncConsensus) {
 							// save the new block in the store
 							rp.asyncConsensus.consensusPool.Add(&newLevel2FallBackBlock)
 
-							if rp.isAsynchronous {
-
-								epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
-
-								if rp.amIAttacked(int(epoch)) {
-									time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
-								}
-							}
-
 							//	broadcast <propose-async, B f2>
 
 							for name, _ := range rp.replicaAddrList {
@@ -303,14 +286,7 @@ func (rp *Replica) handleConsensusAsyncVote(message *proto.AsyncConsensus) {
 				}
 
 				rp.asyncConsensus.consensusPool.Add(&newLevel2FallBackBlock)
-				if rp.isAsynchronous {
 
-					epoch := time.Now().Sub(rp.asyncConsensus.startTime).Milliseconds() / int64(rp.timeEpochSize)
-
-					if rp.amIAttacked(int(epoch)) {
-						time.Sleep(time.Duration(rp.asynchronousTime) * time.Millisecond)
-					}
-				}
 				//	broadcast <propose-async, B f2 , self.id, 2>
 				for name, _ := range rp.replicaAddrList {
 
