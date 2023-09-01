@@ -16,7 +16,7 @@ os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " 
 
 # case 2: batching no pipelining sync
 
-arrivalRate = 10000
+arrivalRate = 1000
 viewTimeoutTime = 30000000
 batchTime = 5000
 batchSize = 50
@@ -30,7 +30,7 @@ os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " 
 
 # case 3: no batching, pipelining, sync
 
-arrivalRate = 30
+arrivalRate = 100
 viewTimeoutTime = 30000000
 batchTime = 1000
 batchSize = 1
@@ -44,12 +44,12 @@ os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " 
 
 # case 4: batching, pipelining, sync
 
-arrivalRate = 10000
+arrivalRate = 1000
 viewTimeoutTime = 30000000
 batchTime = 5000
 batchSize = 50
-pipelineLength = 5
-networkbatchTime = 3
+pipelineLength = 10
+networkbatchTime = 2
 asyncSimTimeout = 0
 
 os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " + str(viewTimeoutTime) + " " + str(
@@ -59,12 +59,12 @@ os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " 
 # case 5: batching, pipelining, async-medium
 
 arrivalRate = 1000
-viewTimeoutTime = 15000
+viewTimeoutTime = 150000
 batchTime = 5000
 batchSize = 50
 pipelineLength = 5
-networkbatchTime = 3
-asyncSimTimeout = 6
+networkbatchTime = 1
+asyncSimTimeout = 12
 
 os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " + str(viewTimeoutTime) + " " + str(
     batchTime) + " " + str(batchSize) + " " + str(pipelineLength) + " " + str(networkbatchTime) + " " + str(
@@ -72,13 +72,13 @@ os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " 
 
 # case 6: batching, pipelining, async
 
-arrivalRate = 100
-viewTimeoutTime = 10000
+arrivalRate = 1000
+viewTimeoutTime = 150000
 batchTime = 5000
 batchSize = 50
 pipelineLength = 5
-networkbatchTime = 3
-asyncSimTimeout = 6
+networkbatchTime = 1
+asyncSimTimeout = 16
 
 os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " + str(viewTimeoutTime) + " " + str(
     batchTime) + " " + str(batchSize) + " " + str(pipelineLength) + " " + str(networkbatchTime) + " " + str(
