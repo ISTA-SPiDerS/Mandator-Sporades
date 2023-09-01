@@ -42,11 +42,8 @@ func (rp *Replica) handleConsensusNewViewMessage(message *proto.Pipelined_Sporad
 				// set block_high to be the highest received block_high in the new view messages
 				highest_block_high := rp.extractHighestRankedBlockHigh(rp.consensus.newViewMessages[message.V])
 				if rp.hasGreaterRank(highest_block_high.V, highest_block_high.R, rp.consensus.blockHigh.V, rp.consensus.blockHigh.R) {
-					rp.consensus.blockHigh = highest_block_high
-					if rp.debugOn {
-						rp.debug("added a new block to store "+fmt.Sprintf("%v", highest_block_high), 0)
-					}
 					rp.consensus.consensusPool.Add(highest_block_high)
+					rp.consensus.blockHigh = rp.CloneMyStruct(highest_block_high)
 					rp.consensus.rCurr = rp.consensus.blockHigh.R
 					if rp.debugOn {
 						rp.debug("updated block_high to "+fmt.Sprintf("%v", rp.consensus.blockHigh), 0)
@@ -103,12 +100,12 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 			rp.consensus.vCurr = message.BlockNew.V
 			rp.consensus.rCurr = message.BlockNew.R
 			// set block high to the new block
-			rp.consensus.blockHigh = message.BlockNew
+			rp.consensus.blockHigh = rp.CloneMyStruct(message.BlockNew)
 			// set block commit to block commit, and call updateSMR()
 			if rp.hasGreaterRank(message.BlockCommit.V, message.BlockCommit.R, rp.consensus.blockCommit.V, rp.consensus.blockCommit.R) &&
 				rp.hasGreaterRank(message.BlockCommit.V, message.BlockCommit.R, rp.consensus.lastCommittedBlock.V, rp.consensus.lastCommittedBlock.R) {
-				rp.consensus.blockCommit = message.BlockCommit
 				rp.consensus.consensusPool.Add(message.BlockCommit)
+				rp.consensus.blockCommit = rp.CloneMyStruct(message.BlockCommit)
 				if rp.debugOn {
 					rp.debug("follower updated block commit to "+fmt.Sprintf("%v", rp.consensus.blockCommit), 22)
 				}
@@ -121,7 +118,6 @@ func (rp *Replica) handleConsensusProposeSync(message *proto.Pipelined_Sporades)
 			}
 
 			vote_block_high := rp.CloneMyStruct(rp.consensus.blockHigh)
-
 			vote_block_high.Commands.Requests = nil
 			voteMsg := proto.Pipelined_Sporades{
 				Sender:      rp.name,
@@ -248,7 +244,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 		return
 	}
 
-	if len(rp.incomingRequests) >= rp.replicaBatchSize || (time.Now().Sub(rp.consensus.lastProposedTime).Microseconds() > int64(rp.replicaBatchTime)) || immediate {
+	if len(rp.incomingRequests) >= rp.replicaBatchSize || (len(rp.incomingRequests) > 0 && time.Now().Sub(rp.consensus.lastProposedTime).Microseconds() > int64(rp.replicaBatchTime)) || immediate {
 
 		if rp.consensus.viewTimer != nil {
 			rp.consensus.viewTimer.Cancel()
@@ -358,7 +354,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 		rp.consensus.vCurr = newBlock.V
 		rp.consensus.rCurr = newBlock.R
 
-		rp.consensus.blockHigh = &newBlock
+		rp.consensus.blockHigh = rp.CloneMyStruct(&newBlock)
 
 		// send a vote to self
 		if rp.debugOn {
@@ -366,8 +362,7 @@ func (rp *Replica) propose(sendHistory bool, immediate bool) {
 		}
 
 		vote_block_high := rp.CloneMyStruct(rp.consensus.blockHigh)
-
-		vote_block_high.Parent = nil
+		vote_block_high.Commands.Requests = nil
 
 		voteMsg := proto.Pipelined_Sporades{
 			Sender:      rp.name,
