@@ -594,7 +594,7 @@ func (rp *Replica) printLogConsensus() {
 
 		toPrint = append([]*proto.Pipelined_Sporades_Block{head}, toPrint...)
 		if rp.debugOn {
-			rp.debug(fmt.Sprintf("printing: block %v\n", head), 22)
+			rp.debug(fmt.Sprintf("printing: block %v\n", head), 1)
 		}
 
 		parent_id := head.ParentId
