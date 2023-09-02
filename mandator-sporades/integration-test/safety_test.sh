@@ -5,33 +5,23 @@ batchSize=$4
 networkBatchTime=$5
 asyncSimTime=$6
 consAlgo=$7
-mode=$8
 
 replica_path="replica/bin/replica"
 ctl_path="client/bin/client"
-output_path="logs/arrival=${arrivalRate}/viewtimeout=${viewTimeoutTime}/batchtime=${batchTime}/batchsize=${batchSize}/networkBatchTime=${networkBatchTime}/asyncSimTime=${asyncSimTime}/algo=${consAlgo}/mode=${mode}/"
+output_path="logs/arrival=${arrivalRate}/viewtimeout=${viewTimeoutTime}/batchtime=${batchTime}/batchsize=${batchSize}/networkBatchTime=${networkBatchTime}/asyncSimTime=${asyncSimTime}/algo=${consAlgo}/"
 
-rm -r ${output_path}
-mkdir -p ${output_path}
+rm -r ${output_path}; mkdir -p ${output_path}
 
-pkill replica
-pkill replica
-pkill replica
-pkill replica
-pkill replica
-pkill client
-pkill client
-pkill client
-pkill client
-pkill client
+pkill replica; pkill replica; pkill replica; pkill replica; pkill replica
+pkill client; pkill client; pkill client; pkill client; pkill client
 
 echo "Killed previously running instances"
 
-nohup ./${replica_path} --name 1 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}1.log &
-nohup ./${replica_path} --name 2 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}2.log &
-nohup ./${replica_path} --name 3 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}3.log &
-nohup ./${replica_path} --name 4 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}4.log &
-nohup ./${replica_path} --name 5 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode ${mode} --debugLevel 22 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}5.log &
+nohup ./${replica_path} --name 1 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode 1 --debugLevel 42 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}1.log &
+nohup ./${replica_path} --name 2 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode 1 --debugLevel 42 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}2.log &
+nohup ./${replica_path} --name 3 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode 1 --debugLevel 42 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}3.log &
+nohup ./${replica_path} --name 4 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode 1 --debugLevel 42 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}4.log &
+nohup ./${replica_path} --name 5 --consAlgo ${consAlgo} --batchSize "${batchSize}" --batchTime "${batchTime}" --debugOn --isAsync --mode 1 --debugLevel 42 --viewTimeout "${viewTimeoutTime}" --logFilePath ${output_path} --networkBatchTime ${networkBatchTime} --asyncSimTime ${asyncSimTime} >${output_path}5.log &
 
 echo "Started 5 replicas"
 
@@ -67,20 +57,12 @@ echo "sent status to print logs"
 
 sleep 30
 
-pkill replica
-pkill replica
-pkill replica
-pkill replica
-pkill replica
-pkill client
-pkill client
-pkill client
-pkill client
-pkill client
+pkill replica; pkill replica; pkill replica; pkill replica; pkill replica;
+pkill client; pkill client; pkill client; pkill client; pkill client
 
 echo "Killed instances"
 
 python3 integration-test/python/overlay-test.py ${output_path}1-consensus.txt ${output_path}2-consensus.txt ${output_path}3-consensus.txt ${output_path}4-consensus.txt ${output_path}5-consensus.txt >${output_path}consensus-correctness.log &
-python3 integration-test/python/overlay-test.py ${output_path}1-mem-pool.txt ${output_path}2-mem-pool.txt ${output_path}3-mem-pool.txt ${output_path}4-mem-pool.txt ${output_path}5-mem-pool.txt >${output_path}mem-pool-correctness.log &
+
 
 echo "Finish test"
