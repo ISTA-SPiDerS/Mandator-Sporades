@@ -43,7 +43,7 @@ func (cl *Client) ConnectToReplicas() {
 				break
 			} else {
 				if counter == 1000000 {
-					panic(fmt.Sprintf("%v", err))
+					panic(fmt.Sprintf("cannot connect to replica %v", err))
 				}
 			}
 		}
