@@ -382,7 +382,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 				leaderNode := l
 
 				if rp.debugOn {
-					common.Debug("Async leader node for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr))+" is "+strconv.Itoa(int(leaderNode)), 2, rp.debugLevel, rp.debugOn)
+					common.Debug("Async leader node for the view "+strconv.Itoa(int(rp.asyncConsensus.vCurr))+" is "+strconv.Itoa(leaderNode), 2, rp.debugLevel, rp.debugOn)
 				}
 
 				//– if height 2 block by leader exists in the first n-f height 2 blocks received then
@@ -391,7 +391,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 				height2ConfirmedLeaderBlock = nil
 				for j := 0; j < len(rp.asyncConsensus.bFall[key]); j++ {
 					creator := strings.Split(rp.asyncConsensus.bFall[key][j], ".")[0]
-					if creator == strconv.Itoa(int(leaderNode)) {
+					if creator == strconv.Itoa(leaderNode) {
 						height2ConfirmedLeaderBlockExists = true
 						height2ConfirmedLeaderBlock, _ = rp.asyncConsensus.consensusPool.Get(rp.asyncConsensus.bFall[key][j])
 						break
@@ -426,7 +426,7 @@ func (rp *Replica) handleConsensusFallbackCompleteMessage(message *proto.AsyncCo
 						height2LeaderBlock = nil
 						for k := 0; k < len(height2Blocks); k++ {
 							creator := strings.Split(height2Blocks[k], ".")[0]
-							if creator == strconv.Itoa(int(leaderNode)) {
+							if creator == strconv.Itoa(leaderNode) {
 								height2LeaderBlockExists = true
 								height2LeaderBlock, _ = rp.asyncConsensus.consensusPool.Get(height2Blocks[k])
 								break
