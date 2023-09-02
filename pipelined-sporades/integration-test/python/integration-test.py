@@ -73,12 +73,12 @@ os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " 
 # case 6: batching, pipelining, async
 
 arrivalRate = 1000
-viewTimeoutTime = 150000
+viewTimeoutTime = 100000
 batchTime = 5000
 batchSize = 50
-pipelineLength = 5
-networkbatchTime = 1
-asyncSimTimeout = 16
+pipelineLength = 10
+networkbatchTime = 3
+asyncSimTimeout = 120
 
 os.system("/bin/bash integration-test/safety_test.sh " + str(arrivalRate) + " " + str(viewTimeoutTime) + " " + str(
     batchTime) + " " + str(batchSize) + " " + str(pipelineLength) + " " + str(networkbatchTime) + " " + str(
