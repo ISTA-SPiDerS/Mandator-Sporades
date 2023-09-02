@@ -48,6 +48,9 @@ func (ms *AsyncConsensusStore) Init(debugLevel int, debugOn bool) {
 
 func (ms *AsyncConsensusStore) Add(block *proto.AsyncConsensus_Block) {
 
+	if block.Parent != nil {
+		ms.Add(block.Parent)
+	}
 	_, ok := ms.ConsensusBlocks[block.Id]
 	if !ok {
 		ms.ConsensusBlocks[block.Id] = AsynConsensusBlock{

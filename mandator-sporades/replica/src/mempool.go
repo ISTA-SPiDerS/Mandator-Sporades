@@ -98,12 +98,6 @@ func (rp *Replica) handleMemPool(message *proto.MemPool) {
 
 	} else if message.Type == 2 {
 		// Mem-Pool-Mem-Block-Ack 2
-		// update rp.memPool.lastSeenAck
-		// if the ack is for the last block I sent
-		//		save the ack in the pool
-		// 		if n-f acks are received for my last created block and awaitingAcks is true
-		//			set AwaitingAcks to false
-		//			set lastCompletedRound[self]++
 		_, sequence := common.ExtractSequenceNumber(message.UniqueId)
 		if sequence > rp.memPool.lastSeenAck[message.Sender-1] {
 			rp.memPool.lastSeenAck[message.Sender-1] = sequence
@@ -168,7 +162,7 @@ func (rp *Replica) createNewMemBlock() {
 		len(rp.memPool.incomingBuffer) > 0)) && rp.memPool.awaitingAcks == false {
 
 		if rp.debugOn {
-			common.Debug("Creating a new mem block with  "+strconv.Itoa(len(rp.memPool.incomingBuffer))+" client batches", 0, rp.debugLevel, rp.debugOn)
+			common.Debug("Creating a new mem block ", 0, rp.debugLevel, rp.debugOn)
 		}
 
 		// create a new Mem block
@@ -278,8 +272,6 @@ func (rp *Replica) sendMemBlockToEveryone(m *proto.MemPool, replicas []int32) {
 
 /*
 	Back pressure based broadcasting where the sender sends only to healthy replicas
-	Healthy replicas are the ones who sent an acknowledgements for the previously sent blocks
-	To balance the tradeoff between perfect back pressure and performance, we use a window
 */
 
 func (rp *Replica) sendBlockToBestMajority(m *proto.MemPool, replicas []int32) {
@@ -304,37 +296,6 @@ func (rp *Replica) sendBlockToBestMajority(m *proto.MemPool, replicas []int32) {
 		}
 	}
 	rp.sendMemBlockToEveryone(m, healthyReplicas)
-}
-
-/*
-	This is only for testing the mem pool
-	Upon receiving n-f block acks, the replica sends dummy response to the client
-*/
-
-func (rp *Replica) sendDummyResponse(id string) {
-	// get the mempool block
-	memPoolBlock, ok := rp.memPool.blockMap.Get(id)
-	if ok {
-		clientBatches := memPoolBlock.ClientBatches
-		for i := 0; i < len(clientBatches); i++ {
-			// send the response back to the client
-			resClientBatch := proto.ClientBatch{
-				UniqueId: clientBatches[i].UniqueId,
-				Requests: clientBatches[i].Requests,
-				Sender:   clientBatches[i].Sender,
-			}
-
-			rpcPair := common.RPCPair{
-				Code: rp.messageCodes.ClientBatchRpc,
-				Obj:  &resClientBatch,
-			}
-
-			rp.sendMessage(int32(resClientBatch.Sender), rpcPair)
-		}
-
-	} else {
-		panic("The mem pool for id " + id + " was not found")
-	}
 }
 
 /*
@@ -409,18 +370,22 @@ func (rp *Replica) printLogMemPool() {
 func (rp *Replica) sendMemPoolClientResponse(memPoolBlock *proto.MemPool) {
 	clientBatches := memPoolBlock.ClientBatches
 	for i := 0; i < len(clientBatches); i++ {
-		// send the response back to the client
-		resClientBatch := proto.ClientBatch{
-			UniqueId: clientBatches[i].UniqueId,
-			Requests: clientBatches[i].Requests,
-			Sender:   clientBatches[i].Sender,
-		}
 
-		rpcPair := common.RPCPair{
-			Code: rp.messageCodes.ClientBatchRpc,
-			Obj:  &resClientBatch,
-		}
+		if clientBatches[i].Sender != -1 {
 
-		rp.sendMessage(int32(resClientBatch.Sender), rpcPair)
+			// send the response back to the client
+			resClientBatch := proto.ClientBatch{
+				UniqueId: clientBatches[i].UniqueId,
+				Requests: clientBatches[i].Requests,
+				Sender:   clientBatches[i].Sender,
+			}
+
+			rpcPair := common.RPCPair{
+				Code: rp.messageCodes.ClientBatchRpc,
+				Obj:  &resClientBatch,
+			}
+
+			rp.sendMessage(int32(resClientBatch.Sender), rpcPair)
+		}
 	}
 }

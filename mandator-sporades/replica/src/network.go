@@ -54,7 +54,7 @@ func (rp *Replica) ConnectToNode(id int32, address string, nodeType string) {
 }
 
 /*
-	Connect to all clients and all replicas on bootstrap
+	Connect to all replicas on bootstrap
 */
 
 func (rp *Replica) ConnectBootStrap() {
@@ -114,7 +114,10 @@ func (rp *Replica) WaitForConnections() {
 	go func() {
 		var b [4]byte
 		bs := b[:4]
-		Listener, _ := net.Listen("tcp", rp.listenAddress)
+		Listener, err := net.Listen("tcp", rp.listenAddress)
+		if err != nil {
+			panic(err.Error())
+		}
 		if rp.debugOn {
 			common.Debug("Listening to incoming connection in "+rp.listenAddress, 0, rp.debugLevel, rp.debugOn)
 		}
