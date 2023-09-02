@@ -52,10 +52,6 @@ func (rp *Replica) updatePaxosSMR() {
 		for i := rp.paxosConsensus.lastCommittedLogIndex + 1; i < rp.paxosConsensus.lastDecidedLogIndex+1; i++ {
 			nextInstanceToCommit := rp.paxosConsensus.replicatedLog[i]
 			nextMemBlockLogPositionsToCommit := nextInstanceToCommit.decisions
-			if rp.debugOn {
-				common.Debug("Mem block indexes of the new instance "+strconv.Itoa(int(i))+" is "+fmt.Sprintf("%v", nextMemBlockLogPositionsToCommit), 0, rp.debugLevel, rp.debugOn)
-				common.Debug("Mem block indexes of the last committed consensus block "+strconv.Itoa(int(rp.paxosConsensus.lastCommittedLogIndex))+"is "+fmt.Sprintf("%v", rp.paxosConsensus.lastCommittedRounds), 0, rp.debugLevel, rp.debugOn)
-			}
 			// for each log position in nextMemBlockLogPositionsToCommit that corresponds to different replicas, check if the index is greater than the last committed index
 			for j := 0; j < rp.numReplicas; j++ {
 				if int(nextMemBlockLogPositionsToCommit[j]) > rp.paxosConsensus.lastCommittedRounds[j] {
@@ -82,7 +78,7 @@ func (rp *Replica) updatePaxosSMR() {
 				}
 			}
 			if rp.debugOn {
-				common.Debug("Committed paxos consensus instance "+"."+strconv.Itoa(int(i))+" with mem pool indexes "+fmt.Sprintf("%v", nextInstanceToCommit.decisions)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 22, rp.debugLevel, rp.debugOn)
+				common.Debug("Committed paxos consensus instance "+"."+strconv.Itoa(int(i))+" with mem pool indexes "+fmt.Sprintf("%v", nextInstanceToCommit.decisions)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.paxosConsensus.startTime)), 42, rp.debugLevel, rp.debugOn)
 			}
 			rp.paxosConsensus.lastCommittedLogIndex = i
 			rp.paxosConsensus.lastCommittedTime = time.Now()

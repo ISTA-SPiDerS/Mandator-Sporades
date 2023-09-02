@@ -14,53 +14,49 @@ import (
 
 func (rp *Replica) sendPrepare() {
 
-	if true {
+	rp.createInstanceIfMissing(int(rp.paxosConsensus.lastDecidedLogIndex + 1))
 
-		rp.createInstanceIfMissing(int(rp.paxosConsensus.lastDecidedLogIndex + 1))
+	// reset the promise response map, because all we care is new view change messages
+	rp.paxosConsensus.promiseResponses = make(map[int32][]*proto.PaxosConsensus)
 
-		// reset the promise response map, because all we care is new view change messages
-		rp.paxosConsensus.promiseResponses = make(map[int32][]*proto.PaxosConsensus)
-
-		if rp.paxosConsensus.lastPromisedBallot > rp.paxosConsensus.lastPreparedBallot {
-			rp.paxosConsensus.lastPreparedBallot = rp.paxosConsensus.lastPromisedBallot
-		}
-		rp.paxosConsensus.lastPreparedBallot = rp.paxosConsensus.lastPreparedBallot + 100*rp.name + 2
-
-		rp.paxosConsensus.state = "C" // become a contestant
-		// increase the view number
-		rp.paxosConsensus.view++
-		// broadcast a prepare message
-		for name, _ := range rp.replicaAddrList {
-			prepareMsg := proto.PaxosConsensus{
-				Sender:         rp.name,
-				Receiver:       name,
-				UniqueId:       "",
-				Type:           1,
-				Note:           "",
-				InstanceNumber: rp.paxosConsensus.lastDecidedLogIndex + 1,
-				PrepareBallot:  rp.paxosConsensus.lastPreparedBallot,
-				PromiseBallot:  -1,
-				ProposeBallot:  -1,
-				AcceptBalllot:  -1,
-				View:           rp.paxosConsensus.view,
-				PromiseReply:   nil,
-				ProposeValue:   nil,
-				DecidedValue:   nil,
-			}
-
-			rpcPair := common.RPCPair{
-				Code: rp.messageCodes.PaxosConsensus,
-				Obj:  &prepareMsg,
-			}
-
-			rp.sendMessage(name, rpcPair)
-			if rp.debugOn {
-				common.Debug("Sent prepare to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
-			}
-		}
-	} else {
-		rp.paxosConsensus.state = "A" // become an acceptor
+	if rp.paxosConsensus.lastPromisedBallot > rp.paxosConsensus.lastPreparedBallot {
+		rp.paxosConsensus.lastPreparedBallot = rp.paxosConsensus.lastPromisedBallot
 	}
+	rp.paxosConsensus.lastPreparedBallot = rp.paxosConsensus.lastPreparedBallot + 100*rp.name + 2
+
+	rp.paxosConsensus.state = "C" // become a contestant
+	// increase the view number
+	rp.paxosConsensus.view++
+	// broadcast a prepare message
+	for name, _ := range rp.replicaAddrList {
+		prepareMsg := proto.PaxosConsensus{
+			Sender:         rp.name,
+			Receiver:       name,
+			UniqueId:       "",
+			Type:           1,
+			Note:           "",
+			InstanceNumber: rp.paxosConsensus.lastDecidedLogIndex + 1,
+			PrepareBallot:  rp.paxosConsensus.lastPreparedBallot,
+			PromiseBallot:  -1,
+			ProposeBallot:  -1,
+			AcceptBalllot:  -1,
+			View:           rp.paxosConsensus.view,
+			PromiseReply:   nil,
+			ProposeValue:   nil,
+			DecidedValue:   nil,
+		}
+
+		rpcPair := common.RPCPair{
+			Code: rp.messageCodes.PaxosConsensus,
+			Obj:  &prepareMsg,
+		}
+
+		rp.sendMessage(name, rpcPair)
+		if rp.debugOn {
+			common.Debug("Sent prepare to "+strconv.Itoa(int(name)), 1, rp.debugLevel, rp.debugOn)
+		}
+	}
+
 	// cancel the view timer
 	if rp.paxosConsensus.viewTimer != nil {
 		rp.paxosConsensus.viewTimer.Cancel()
@@ -212,7 +208,7 @@ func (rp *Replica) sendPropose(instance int32) {
 		rp.paxosConsensus.replicatedLog[instance].proposeResponses = make([]*proto.PaxosConsensus, 0)
 
 		if instance > 1 && (rp.paxosConsensus.replicatedLog[instance-1].decisions == nil || len(rp.paxosConsensus.replicatedLog[instance-1].decisions) < rp.numReplicas) {
-			panic("proposing when the last decided index does not have decisions")
+			panic("proposing when the last decided index does not have correct decisions")
 		}
 
 		if rp.isAsynchronous {
