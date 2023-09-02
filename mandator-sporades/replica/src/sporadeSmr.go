@@ -100,10 +100,7 @@ func (rp *Replica) updateSMR() {
 		for i := 0; i < len(toCommit); i++ {
 			nextBlockToCommit := toCommit[i] // toCommit[i] is the next block to be committed
 			nextMemBlockLogPositionsToCommit := nextBlockToCommit.Commands
-			if rp.debugOn {
-				common.Debug("Mem block indexes of the new consensus block "+nextBlockToCommit.Id+" is "+fmt.Sprintf("%v", nextMemBlockLogPositionsToCommit), 0, rp.debugLevel, rp.debugOn)
-				common.Debug("Mem block indexes of the last committed consensus block "+rp.asyncConsensus.lastCommittedBlock.Id+"is "+fmt.Sprintf("%v", rp.asyncConsensus.lastCommittedRounds), 0, rp.debugLevel, rp.debugOn)
-			}
+
 			// for each log position in nextMemBlockLogPositionsToCommit that corresponds to different replicas, check if the index is greater than the last committed index
 			for j := 0; j < rp.numReplicas; j++ {
 				if int(nextMemBlockLogPositionsToCommit[j]) > rp.asyncConsensus.lastCommittedRounds[j] {
@@ -130,7 +127,7 @@ func (rp *Replica) updateSMR() {
 				}
 			}
 			if rp.debugOn {
-				common.Debug("Committed async consensus block "+nextBlockToCommit.Id+" with mem pool indexes "+fmt.Sprintf("%v", nextBlockToCommit.Commands)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 22, rp.debugLevel, rp.debugOn)
+				common.Debug("Committed async consensus block "+nextBlockToCommit.Id+" with mem pool indexes "+fmt.Sprintf("%v", nextBlockToCommit.Commands)+" at time "+fmt.Sprintf("%v", time.Now().Sub(rp.asyncConsensus.startTime)), 42, rp.debugLevel, rp.debugOn)
 			}
 			rp.asyncConsensus.lastCommittedBlock = nextBlockToCommit
 			rp.asyncConsensus.consensusPool.Add(nextBlockToCommit)

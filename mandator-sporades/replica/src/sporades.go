@@ -390,30 +390,6 @@ func (rp *Replica) handleConsensusExternalResponseMessage(message *proto.AsyncCo
 }
 
 /*
-	Set the great-grandparent element to nil and return a new copy of the block
-*/
-
-func (rp *Replica) makeGreatGrandParentNil(blockOri *proto.AsyncConsensus_Block) *proto.AsyncConsensus_Block {
-
-	block := blockOri
-
-	if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil && block.Parent.Parent.Parent.Parent != nil {
-		newGreatGrandParent := rp.removeParentBlock(block.Parent.Parent.Parent)
-		newGrandParent := rp.copyBlock(block.Parent.Parent)
-		newGrandParent.Parent = newGreatGrandParent
-		newGrandParent = rp.copyBlock(newGrandParent)
-		newParent := rp.copyBlock(block.Parent)
-		newParent.Parent = newGrandParent
-		newParent = rp.copyBlock(newParent)
-		newBlock := rp.copyBlock(block)
-		newBlock.Parent = newParent
-		return newBlock
-	} else {
-		return blockOri
-	}
-}
-
-/*
 	remove parent block
 */
 
@@ -443,6 +419,30 @@ func (rp *Replica) copyBlock(blockOri *proto.AsyncConsensus_Block) *proto.AsyncC
 		Level:    blockOri.Level,
 	}
 	return returnBlock
+}
+
+/*
+	Set the great-grandparent element to nil and return a new copy of the block
+*/
+
+func (rp *Replica) makeGreatGrandParentNil(blockOri *proto.AsyncConsensus_Block) *proto.AsyncConsensus_Block {
+
+	block := blockOri
+
+	if block.Parent != nil && block.Parent.Parent != nil && block.Parent.Parent.Parent != nil && block.Parent.Parent.Parent.Parent != nil {
+		newGreatGrandParent := rp.removeParentBlock(block.Parent.Parent.Parent)
+		newGrandParent := rp.copyBlock(block.Parent.Parent)
+		newGrandParent.Parent = newGreatGrandParent
+		newGrandParent = rp.copyBlock(newGrandParent)
+		newParent := rp.copyBlock(block.Parent)
+		newParent.Parent = newGrandParent
+		newParent = rp.copyBlock(newParent)
+		newBlock := rp.copyBlock(block)
+		newBlock.Parent = newParent
+		return newBlock
+	} else {
+		return blockOri
+	}
 }
 
 /*
