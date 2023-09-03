@@ -115,9 +115,8 @@ func (rp *Replica) updateSMR() {
 						if rp.debugOn {
 							common.Debug("Committed mem block "+memBlock.UniqueId, 1, rp.debugLevel, rp.debugOn)
 						}
-						if memBlock.Creator == rp.name {
-							rp.sendMemPoolClientResponse(memPoolClientResponse)
-						}
+
+						rp.sendMemPoolClientResponse(memPoolClientResponse)
 
 						if rp.debugOn {
 							common.Debug("Committed mem block "+memPoolName, 1, rp.debugLevel, rp.debugOn)
