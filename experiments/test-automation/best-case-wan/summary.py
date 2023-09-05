@@ -8,7 +8,7 @@ grandParentdir = os.path.dirname(parentdir)
 sys.path.append(grandParentdir + "/python")
 from performance_extract import *
 
-arrivals = [500, 10000, 20000, 30000, 35000, 40000, 45000, 50000, 60000, 70000, 80000, 90000]
+arrivals = [500, 10000, 30000, 35000, 40000, 45000, 50000, 60000, 80000, 100000]
 
 scenario="best-case-wan"
 replicaBatchSize=str(3000)
