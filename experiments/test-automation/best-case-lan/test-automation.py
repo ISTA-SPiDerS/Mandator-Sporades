@@ -9,7 +9,7 @@ from execute import *
 
 os.system("/bin/bash experiments/setup-5/setup.sh")
 
-arrivals = [500, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
+arrivals = [500, 10000, 20000, 40000, 50000, 60000, 70000, 80000, 100000, 130000]
 
 scenario="best-case-lan"
 replicaBatchSize=str(2000)
