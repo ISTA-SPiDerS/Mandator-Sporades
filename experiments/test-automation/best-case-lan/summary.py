@@ -8,7 +8,7 @@ grandParentdir = os.path.dirname(parentdir)
 sys.path.append(grandParentdir + "/python")
 from performance_extract import *
 
-arrivals = [500, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
+arrivals = [500, 10000, 20000, 40000, 50000, 60000, 70000, 80000, 100000, 130000]
 
 scenario="best-case-lan"
 replicaBatchSize=str(2000)
@@ -107,6 +107,7 @@ def getSporadesSummary():
             l_records.append(record)
 
     return l_records
+
 
 def getRabiaSummary():
     l_records = []
