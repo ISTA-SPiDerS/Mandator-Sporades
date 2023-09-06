@@ -128,6 +128,20 @@ def getMandatorSummary():
             record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
             l_records.append(record)
 
+            record = ["mandator-paxos-"+str(networkNatchTime), str(arrival * 5)]
+            throughput, latency, nine9, err = [], [], [], []
+            for iteration in iterations:
+                root = "experiments/" +scenario+"/logs/mandator/"+str(arrival)+ "/"+ replicaBatchSize+ "/" + replicaBatchTime +"/"+setting+"/paxos/"+ str(networkNatchTime) +"/"+ clientWindow +"/"+ asyncTimeout +"/"+clientBatchSize+"/"+clientBatchTime+"/"+benchmarkMode+"/"+str(1)+"/"+asyncTimeEpochSize+"/"+str(viewTimeout)+"/"+str(iteration)+"/execution/"
+                t, l, n, e = getManatorSporadesPerformance(root, 21, 5)
+                throughput.append(t)
+                latency.append(l)
+                nine9.append(n)
+                err.append(e)
+            record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
+            record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
+            l_records.append(record)
     return l_records
 
 

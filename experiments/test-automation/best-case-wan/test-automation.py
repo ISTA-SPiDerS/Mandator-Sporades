@@ -91,24 +91,26 @@ for iteration in [1,2,3]:
         runEPaxos(params)
 
         # mandator
-        params={}
-        params["scenario"]=scenario
-        params["arrival"]=str(arrival)
-        params["replicaBatchSize"]=replicaBatchSize
-        params["replicaBatchTime"]=replicaBatchTime
-        params["setting"]=setting
-        params["algo"]="async"
-        params["networkBatchTime"]=str(30)
-        params["clientWindow"]=clientWindow
-        params["asyncSimTime"]=asyncTimeout
-        params["clientBatchSize"]=clientBatchSize
-        params["clientBatchTime"]=clientBatchTime
-        params["benchmarkMode"]=benchmarkMode
-        params["broadcastMode"]=str(1)
-        params["asyncTimeEpochSize"]=asyncTimeEpochSize
-        params["viewTimeout"]=viewTimeout
-        params["collectClientLogs"]=collectClientLogs
-        params["isLeaderKill"]=isLeaderKill
-        params["iteration"]=str(iteration)
-        runMandator(params)
+
+        for algo in ["async", "paxos"]:
+            params={}
+            params["scenario"]=scenario
+            params["arrival"]=str(arrival)
+            params["replicaBatchSize"]=replicaBatchSize
+            params["replicaBatchTime"]=replicaBatchTime
+            params["setting"]=setting
+            params["algo"]=algo
+            params["networkBatchTime"]=str(30)
+            params["clientWindow"]=clientWindow
+            params["asyncSimTime"]=asyncTimeout
+            params["clientBatchSize"]=clientBatchSize
+            params["clientBatchTime"]=clientBatchTime
+            params["benchmarkMode"]=benchmarkMode
+            params["broadcastMode"]=str(1)
+            params["asyncTimeEpochSize"]=asyncTimeEpochSize
+            params["viewTimeout"]=viewTimeout
+            params["collectClientLogs"]=collectClientLogs
+            params["isLeaderKill"]=isLeaderKill
+            params["iteration"]=str(iteration)
+            runMandator(params)
 

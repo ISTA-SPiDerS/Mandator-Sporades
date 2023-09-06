@@ -20,7 +20,7 @@ setting="WAN"
 pipelineLength=str(1)
 asyncTimeout=str(500)
 benchmarkMode=str(0)
-asyncTimeEpochSize=str(500)
+asyncTimeEpochSize=str(sys.argv[1])
 viewTimeout=str(450000)
 clientWindow=str(10000)
 collectClientLogs="no"
@@ -75,25 +75,26 @@ for iteration in [1,2,3]:
         params["iteration"]=str(iteration)
         runSporades(params)
 
-        # mandator
-        params={}
-        params["scenario"]=scenario
-        params["arrival"]=str(arrival)
-        params["replicaBatchSize"]=replicaBatchSize
-        params["replicaBatchTime"]=replicaBatchTime
-        params["setting"]=setting
-        params["algo"]="async"
-        params["networkBatchTime"]=str(30)
-        params["clientWindow"]=clientWindow
-        params["asyncSimTime"]=asyncTimeout
-        params["clientBatchSize"]=clientBatchSize
-        params["clientBatchTime"]=clientBatchTime
-        params["benchmarkMode"]=benchmarkMode
-        params["broadcastMode"]=str(1)
-        params["asyncTimeEpochSize"]=asyncTimeEpochSize
-        params["viewTimeout"]=viewTimeout
-        params["collectClientLogs"]=collectClientLogs
-        params["isLeaderKill"]=isLeaderKill
-        params["iteration"]=str(iteration)
-        runMandator(params)
+        for algo in ["async", "paxos"]:
+            # mandator
+            params={}
+            params["scenario"]=scenario
+            params["arrival"]=str(arrival)
+            params["replicaBatchSize"]=replicaBatchSize
+            params["replicaBatchTime"]=replicaBatchTime
+            params["setting"]=setting
+            params["algo"]=algo
+            params["networkBatchTime"]=str(30)
+            params["clientWindow"]=clientWindow
+            params["asyncSimTime"]=asyncTimeout
+            params["clientBatchSize"]=clientBatchSize
+            params["clientBatchTime"]=clientBatchTime
+            params["benchmarkMode"]=benchmarkMode
+            params["broadcastMode"]=str(1)
+            params["asyncTimeEpochSize"]=asyncTimeEpochSize
+            params["viewTimeout"]=viewTimeout
+            params["collectClientLogs"]=collectClientLogs
+            params["isLeaderKill"]=isLeaderKill
+            params["iteration"]=str(iteration)
+            runMandator(params)
 
