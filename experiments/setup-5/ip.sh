@@ -3,50 +3,50 @@ pwd=$(pwd)
 cert=${pwd}/experiments/private_key_aws/pasindu2023
 user_name="ubuntu"
 
-replica1_name=ec2-54-153-5-119.us-west-1.compute.amazonaws.com
+replica1_name=ec2-54-176-58-118.us-west-1.compute.amazonaws.com
 replica1=${user_name}@${replica1_name}
 
-replica2_name=ec2-54-219-72-85.us-west-1.compute.amazonaws.com
+replica2_name=ec2-13-57-247-43.us-west-1.compute.amazonaws.com
 replica2=${user_name}@${replica2_name}
 
-replica3_name=ec2-54-241-80-73.us-west-1.compute.amazonaws.com
+replica3_name=ec2-54-67-64-159.us-west-1.compute.amazonaws.com
 replica3=${user_name}@${replica3_name}
 
-replica4_name=ec2-18-144-125-231.us-west-1.compute.amazonaws.com
+replica4_name=ec2-54-219-173-46.us-west-1.compute.amazonaws.com
 replica4=${user_name}@${replica4_name}
 
-replica5_name=ec2-54-67-42-144.us-west-1.compute.amazonaws.com
+replica5_name=ec2-54-193-138-208.us-west-1.compute.amazonaws.com
 replica5=${user_name}@${replica5_name}
 
-client1_name=ec2-54-193-201-151.us-west-1.compute.amazonaws.com
+client1_name=ec2-54-153-90-15.us-west-1.compute.amazonaws.com
 client1=${user_name}@${client1_name}
 
-client2_name=ec2-3-101-53-92.us-west-1.compute.amazonaws.com
+client2_name=ec2-3-101-22-97.us-west-1.compute.amazonaws.com
 client2=${user_name}@${client2_name}
 
-client3_name=ec2-54-176-88-44.us-west-1.compute.amazonaws.com
+client3_name=ec2-13-57-245-111.us-west-1.compute.amazonaws.com
 client3=${user_name}@${client3_name}
 
-client4_name=ec2-18-144-90-216.us-west-1.compute.amazonaws.com
+client4_name=ec2-3-101-17-88.us-west-1.compute.amazonaws.com
 client4=${user_name}@${client4_name}
 
-client5_name=ec2-54-153-14-71.us-west-1.compute.amazonaws.com
+client5_name=ec2-13-57-184-93.us-west-1.compute.amazonaws.com
 client5=${user_name}@${client5_name}
 
 declare -a machines=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${client1} ${client2} ${client3} ${client4} ${client5})
 echo "ip addresses loaded"
 
-replica1_ip="54.153.5.119"
-replica2_ip="54.219.72.85"
-replica3_ip="54.241.80.73"
-replica4_ip="18.144.125.231"
-replica5_ip="54.67.42.144"
+replica1_ip="54.176.58.118"
+replica2_ip="13.57.247.43"
+replica3_ip="54.67.64.159"
+replica4_ip="54.219.173.46"
+replica5_ip="54.193.138.208"
 
-client1_ip="54.193.201.151"
-client2_ip="3.101.53.92"
-client3_ip="54.176.88.44"
-client4_ip="18.144.90.216"
-client5_ip="54.153.14.71"
+client1_ip="54.153.90.15"
+client2_ip="3.101.22.97"
+client3_ip="13.57.245.111"
+client4_ip="3.101.17.88"
+client5_ip="13.57.184.93"
 
 kill_command="pkill epaxos_master ; pkill epaxos_server; pkill epaxos_client; pkill man_client; pkill man_replica;  pkill pa_ra_replica ; pkill pa_ra_client; pkill pipe_client; pkill pipe_replica; pkill rabia"
 remote_log_path="/home/${user_name}/mandator/logs/"
