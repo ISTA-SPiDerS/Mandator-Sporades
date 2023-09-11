@@ -75,7 +75,7 @@ then
   sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} "${replica1}" "${kill_command}; ${kill_command}"
 fi
 
-sleep 110
+sleep 150
 
 echo "Completed Client[s]"
 
