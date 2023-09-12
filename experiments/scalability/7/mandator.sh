@@ -59,7 +59,7 @@ sleep 15
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2} ".${remote_ctl_path} --name 22 --config ${remote_config_path} --logFilePath ${remote_log_path} --requestType status --operationType 3" >${output_path}status3.log &
 echo "Sent consensus start up"
 
-sleep 15
+sleep 30
 
 echo "Starting client[s]"
 
