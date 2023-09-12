@@ -19,10 +19,10 @@ replica5_name=ec2-18-143-131-248.ap-southeast-1.compute.amazonaws.com
 replica5=${user_name}@${replica5_name}
 
 replica6_name=ec2-13-238-128-160.ap-southeast-2.compute.amazonaws.com
-replica6=${user_name}@${replica1_name}
+replica6=${user_name}@${replica6_name}
 
 replica7_name=ec2-43-207-171-135.ap-northeast-1.compute.amazonaws.com
-replica7=${user_name}@${replica2_name}
+replica7=${user_name}@${replica7_name}
 
 client1_name=ec2-13-210-220-164.ap-southeast-2.compute.amazonaws.com
 client1=${user_name}@${client1_name}
@@ -40,10 +40,10 @@ client5_name=ec2-54-251-167-217.ap-southeast-1.compute.amazonaws.com
 client5=${user_name}@${client5_name}
 
 client6_name=ec2-13-54-7-28.ap-southeast-2.compute.amazonaws.com
-client6=${user_name}@${client1_name}
+client6=${user_name}@${client6_name}
 
 client7_name=ec2-52-192-70-166.ap-northeast-1.compute.amazonaws.com
-client7=${user_name}@${client2_name}
+client7=${user_name}@${client7_name}
 
 declare -a machines=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${replica6} ${replica7} ${client1} ${client2} ${client3} ${client4} ${client5} ${client6} ${client7})
 echo "ip addresses loaded"

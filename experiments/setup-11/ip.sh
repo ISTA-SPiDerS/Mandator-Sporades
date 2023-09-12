@@ -19,22 +19,22 @@ replica5_name=ec2-18-143-131-248.ap-southeast-1.compute.amazonaws.com
 replica5=${user_name}@${replica5_name}
 
 replica6_name=ec2-13-238-128-160.ap-southeast-2.compute.amazonaws.com
-replica6=${user_name}@${replica1_name}
+replica6=${user_name}@${replica6_name}
 
 replica7_name=ec2-43-207-171-135.ap-northeast-1.compute.amazonaws.com
-replica7=${user_name}@${replica2_name}
+replica7=${user_name}@${replica7_name}
 
 replica8_name=ec2-54-180-202-32.ap-northeast-2.compute.amazonaws.com
-replica8=${user_name}@${replica3_name}
+replica8=${user_name}@${replica8_name}
 
 replica9_name=ec2-15-168-39-60.ap-northeast-3.compute.amazonaws.com
-replica9=${user_name}@${replica4_name}
+replica9=${user_name}@${replica9_name}
 
 replica10_name=ec2-43-207-115-118.ap-northeast-1.compute.amazonaws.com
-replica10=${user_name}@${replica5_name}
+replica10=${user_name}@${replica10_name}
 
 replica11_name=ec2-43-202-64-32.ap-northeast-2.compute.amazonaws.com
-replica11=${user_name}@${replica5_name}
+replica11=${user_name}@${replica11_name}
 
 client1_name=ec2-13-210-220-164.ap-southeast-2.compute.amazonaws.com
 client1=${user_name}@${client1_name}
@@ -52,22 +52,22 @@ client5_name=ec2-54-251-167-217.ap-southeast-1.compute.amazonaws.com
 client5=${user_name}@${client5_name}
 
 client6_name=ec2-13-54-7-28.ap-southeast-2.compute.amazonaws.com
-client6=${user_name}@${client1_name}
+client6=${user_name}@${client6_name}
 
 client7_name=ec2-52-192-70-166.ap-northeast-1.compute.amazonaws.com
-client7=${user_name}@${client2_name}
+client7=${user_name}@${client7_name}
 
 client8_name=ec2-3-36-53-180.ap-northeast-2.compute.amazonaws.com
-client8=${user_name}@${client3_name}
+client8=${user_name}@${client8_name}
 
 client9_name=ec2-13-208-168-167.ap-northeast-3.compute.amazonaws.com
-client9=${user_name}@${client4_name}
+client9=${user_name}@${client9_name}
 
 client10_name=ec2-54-248-207-247.ap-northeast-1.compute.amazonaws.com
-client10=${user_name}@${client5_name}
+client10=${user_name}@${client10_name}
 
 client11_name=ec2-43-201-0-7.ap-northeast-2.compute.amazonaws.com
-client11=${user_name}@${client5_name}
+client11=${user_name}@${client11_name}
 
 declare -a machines=(${replica1} ${replica2} ${replica3} ${replica4} ${replica5} ${replica6} ${replica7} ${replica8} ${replica9} ${replica10} ${replica11} ${client1} ${client2} ${client3} ${client4} ${client5} ${client6} ${client7} ${client8} ${client9} ${client10} ${client11})
 echo "ip addresses loaded"
