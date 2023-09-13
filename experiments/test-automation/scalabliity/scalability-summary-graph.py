@@ -1,41 +1,44 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# scalability
+# scalability summary
+plt.figure(figsize=(5, 4))
+plt.rcParams.update({'font.size': 13.30})
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
+ax = plt.gca()
+ax.grid()
+
 
 # set width of bar
 barWidth = 0.20
-plt.figure(figsize=(5, 3))
-plt.rcParams.update({'font.size': 9.30})
-plt.rcParams['pdf.fonttype'] = 42
-plt.rcParams['ps.fonttype'] = 42
 
 # set height of bar
-quepaxa = [584935/1000, 582105/1000, 572427/1000, 571279/1000, 517638/1000, 467337/1000]
-paxos = [434919/1000, 414942/1000, 411128/1000, 404734/1000, 385958/1000, 380000/1000]
-epaxos = [614732/1000, 674802/1000, 0,0,0,0]
+mandator = [110 * 3, 50 * 7, 30 * 11]
+
+sporades = [90 * 3, 27 * 7, 12.5 * 11]
+
+paxos = [100 * 3, 30 * 7,13 * 11]
 
 # Set position of bar on X axis
-br1 = np.arange(len(quepaxa))
+br1 = np.arange(len(mandator))
 br2 = [x + barWidth for x in br1]
 br3 = [x + barWidth for x in br2]
 
 # Make the plot
-plt.bar(br1, quepaxa, color='b', width=barWidth, edgecolor='grey', label='QuePaxa')
-plt.bar(br2, paxos, color='c', width=barWidth, edgecolor='grey', label='Multi-Paxos')
-plt.bar(br3, epaxos, color='m', width=barWidth, edgecolor='grey', label='EPaxos-commit')
+plt.bar(br1, mandator, color='k', width=barWidth, edgecolor='grey', label='SADL\nRACS')
+plt.bar(br2, sporades, color='b', width=barWidth, edgecolor='grey', label='RACS')
+plt.bar(br3, paxos,    color='g', width=barWidth, edgecolor='grey', label='Multi\nPaxos')
 # Adding Xticks
 plt.ylabel('Throughput (x1k cmd/sec)')
-plt.xticks([r + barWidth for r in range(len(quepaxa))],
-           ['N=3','N=5', 'N=7', 'N=9', 'N=11', 'N=13'])
+plt.xticks([r + barWidth for r in range(len(mandator))],
+           ['N=3','N=7', "N=11"])
 
 # plt.legend(ncol= 3,bbox_to_anchor =(1.10, 1.15),fontsize="9.30")
 plt.legend()
-ax = plt.gca()
-ax.grid()
-ax.set_ylim([0, 750])
+ax.set_xlim([-0.5, 3.5])
 
-plt.savefig('scalability.pdf', bbox_inches='tight', pad_inches=0)
+plt.savefig('experiments/scalability/scalability.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
 plt.clf()
 plt.cla()
