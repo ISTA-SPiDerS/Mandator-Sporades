@@ -35,7 +35,7 @@ plt.rcParams['pdf.fonttype'] = 42
 plt.rcParams['ps.fonttype'] = 42
 ax = plt.gca()
 ax.grid()
-ax.set_xlim([0, 500])
+ax.set_xlim([0, 650])
 ax.set_ylim([0, 3000])
 
 plt.plot(di_func(sporades_throughput),         di_func(sporades_tail),       'b*-', label="RACS")
@@ -47,7 +47,7 @@ plt.plot(di_func(mandator_throughput),         di_func(mandator_tail),       'ko
 
 plt.xlabel('Throughput (x 1k cmd/sec)')
 plt.ylabel('99 percentile Latency (ms)')
-plt.legend(fancybox=True, framealpha=0, loc='center right')
+plt.legend(fancybox=True, framealpha=0, loc='upper right')
 plt.savefig('experiments/best-case-wan/logs/wan_throughput_tail.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
 plt.clf()
