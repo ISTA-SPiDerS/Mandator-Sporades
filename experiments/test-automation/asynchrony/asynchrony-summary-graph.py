@@ -33,7 +33,7 @@ plt.bar(br4, raft,     color='m', width=barWidth, edgecolor='grey', label='Raft'
 # Adding Xticks
 plt.ylabel('Throughput (x1k cmd/sec)')
 plt.xticks([r + barWidth for r in range(len(mandator))],
-           ['Epoch=500','Epoch=2000'])
+           ['Epoch length=500','Epoch length=2000'])
 
 # plt.legend(ncol= 3,bbox_to_anchor =(1.10, 1.15),fontsize="9.30")
 plt.legend()
