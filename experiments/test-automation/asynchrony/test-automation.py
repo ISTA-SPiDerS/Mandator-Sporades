@@ -21,7 +21,7 @@ pipelineLength=str(1)
 asyncTimeout=str(500)
 benchmarkMode=str(0)
 asyncTimeEpochSize=str(sys.argv[1])
-viewTimeout=str(450000)
+viewTimeout=str(300000)
 clientWindow=str(10000)
 collectClientLogs="no"
 isLeaderKill="no"
@@ -47,7 +47,7 @@ for iteration in [1,2,3]:
             params["benchmarkMode"]=benchmarkMode
             params["asyncTimeEpochSize"]=asyncTimeEpochSize
             params["viewTimeout"]=viewTimeout
-            params["clientWindow"]=clientWindow
+            params["clientWindow"]=str(1000)
             params["collectClientLogs"]=collectClientLogs
             params["isLeaderKill"]=isLeaderKill
             params["iteration"]=str(iteration)
@@ -62,7 +62,7 @@ for iteration in [1,2,3]:
         params["replicaBatchTime"]=replicaBatchTime
         params["clientBatchSize"]=clientBatchSize
         params["clientBatchTime"]=clientBatchTime
-        params["clientWindow"]=clientWindow
+        params["clientWindow"]=str(1000)
         params["asyncSimTimeout"]=asyncTimeout
         params["asyncTimeEpochSize"]=asyncTimeEpochSize
         params["benchmarkMode"]=benchmarkMode
@@ -75,7 +75,7 @@ for iteration in [1,2,3]:
         params["iteration"]=str(iteration)
         runSporades(params)
 
-        for algo in ["async", "paxos"]:
+        for algo in ["async"]:
             # mandator
             params={}
             params["scenario"]=scenario
@@ -85,7 +85,7 @@ for iteration in [1,2,3]:
             params["setting"]=setting
             params["algo"]=algo
             params["networkBatchTime"]=str(30)
-            params["clientWindow"]=clientWindow
+            params["clientWindow"]=str(10000)
             params["asyncSimTime"]=asyncTimeout
             params["clientBatchSize"]=clientBatchSize
             params["clientBatchTime"]=clientBatchTime

@@ -20,7 +20,7 @@ pipelineLength=str(1)
 asyncTimeout=str(500)
 benchmarkMode=str(0)
 asyncTimeEpochSize=str(sys.argv[1])
-viewTimeout=str(450000)
+viewTimeout=str(300000)
 clientWindow=str(10000)
 collectClientLogs="no"
 isLeaderKill="no"
@@ -36,7 +36,7 @@ def getPaxosRaftSummary():
             record = [algo, str(arrival * 5)]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
-                root = "experiments"+"/"+scenario+"/logs/paxos_raft/"+str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime +"/" +clientBatchSize+ "/"+ clientBatchTime+"/"+setting +"/" +pipelineLength +"/" + algo +"/" +asyncTimeout+"/"+ benchmarkMode+ "/"+ asyncTimeEpochSize +"/"+ viewTimeout +"/"+ clientWindow +"/" + str(iteration) +"/"+"execution/"
+                root = "experiments"+"/"+scenario+"/logs/paxos_raft/"+str(arrival)+"/"+ replicaBatchSize+"/"+ replicaBatchTime +"/" +clientBatchSize+ "/"+ clientBatchTime+"/"+setting +"/" +pipelineLength +"/" + algo +"/" +asyncTimeout+"/"+ benchmarkMode+ "/"+ asyncTimeEpochSize +"/"+ viewTimeout +"/"+ str(1000) +"/" + str(iteration) +"/"+"execution/"
                 t, l, n, e = getPaxosRaftPerformance(root, 21, 5)
                 throughput.append(t)
                 latency.append(l)
@@ -58,7 +58,7 @@ def getSporadesSummary():
             record = ["sporades-"+str(networkNatchTime), str(arrival * 5)]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
-                root = "experiments/" +scenario+"/logs/sporades/"+str(arrival)+ "/"+ replicaBatchSize+ "/" + replicaBatchTime +"/"+ clientBatchSize +"/"+ clientBatchTime +"/"+ clientWindow +"/"+asyncTimeout+"/"+asyncTimeEpochSize+"/"+benchmarkMode+"/"+viewTimeout+"/"+setting+"/"+str(networkNatchTime)+"/"+pipelineLength+"/"+str(iteration)+"/"+"execution/"
+                root = "experiments/" +scenario+"/logs/sporades/"+str(arrival)+ "/"+ replicaBatchSize+ "/" + replicaBatchTime +"/"+ clientBatchSize +"/"+ clientBatchTime +"/"+ str(1000) +"/"+asyncTimeout+"/"+asyncTimeEpochSize+"/"+benchmarkMode+"/"+viewTimeout+"/"+setting+"/"+str(networkNatchTime)+"/"+pipelineLength+"/"+str(iteration)+"/"+"execution/"
                 t, l, n, e = getManatorSporadesPerformance(root, 21, 5)
                 throughput.append(t)
                 latency.append(l)
@@ -80,22 +80,7 @@ def getMandatorSummary():
             record = ["mandator-sporades-"+str(networkNatchTime), str(arrival * 5)]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
-                root = "experiments/" +scenario+"/logs/mandator/"+str(arrival)+ "/"+ replicaBatchSize+ "/" + replicaBatchTime +"/"+setting+"/async/"+ str(networkNatchTime) +"/"+ clientWindow +"/"+ asyncTimeout +"/"+clientBatchSize+"/"+clientBatchTime+"/"+benchmarkMode+"/"+str(1)+"/"+asyncTimeEpochSize+"/"+str(viewTimeout)+"/"+str(iteration)+"/execution/"
-                t, l, n, e = getManatorSporadesPerformance(root, 21, 5)
-                throughput.append(t)
-                latency.append(l)
-                nine9.append(n)
-                err.append(e)
-            record.append(int(sum(remove_farthest_from_median(throughput, 1)) / (len(iterations) - 1)))
-            record.append(int(sum(remove_farthest_from_median(latency, 1)) / (len(iterations) - 1)))
-            record.append(int(sum(remove_farthest_from_median(nine9, 1)) / (len(iterations) - 1)))
-            record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
-            l_records.append(record)
-
-            record = ["mandator-paxos-"+str(networkNatchTime), str(arrival * 5)]
-            throughput, latency, nine9, err = [], [], [], []
-            for iteration in iterations:
-                root = "experiments/" +scenario+"/logs/mandator/"+str(arrival)+ "/"+ replicaBatchSize+ "/" + replicaBatchTime +"/"+setting+"/paxos/"+ str(networkNatchTime) +"/"+ clientWindow +"/"+ asyncTimeout +"/"+clientBatchSize+"/"+clientBatchTime+"/"+benchmarkMode+"/"+str(1)+"/"+asyncTimeEpochSize+"/"+str(viewTimeout)+"/"+str(iteration)+"/execution/"
+                root = "experiments/" +scenario+"/logs/mandator/"+str(arrival)+ "/"+ replicaBatchSize+ "/" + replicaBatchTime +"/"+setting+"/async/"+ str(networkNatchTime) +"/"+ str(10000) +"/"+ asyncTimeout +"/"+clientBatchSize+"/"+clientBatchTime+"/"+benchmarkMode+"/"+str(1)+"/"+asyncTimeEpochSize+"/"+str(viewTimeout)+"/"+str(iteration)+"/execution/"
                 t, l, n, e = getManatorSporadesPerformance(root, 21, 5)
                 throughput.append(t)
                 latency.append(l)
