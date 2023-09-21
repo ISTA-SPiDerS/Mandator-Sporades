@@ -14,7 +14,7 @@ viewTimeout=300000000
 clientWindow=1000
 collectClientLogs="no"
 isLeaderKill="no"
-iteration=1
+iteration=$2
 
 pwd=$(pwd)
 . "${pwd}"/experiments/setup-7/ip.sh
@@ -27,7 +27,7 @@ remote_config_path="/home/${user_name}/mandator/binary/paxos.yml"
 
 echo "Starting test"
 
-output_path="${pwd}/experiments/${scenario}/logs/paxos/${arrival}/"
+output_path="${pwd}/experiments/${scenario}/logs/paxos/${arrival}/${iteration}/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"

@@ -15,7 +15,7 @@ asyncTimeEpochSize=500
 viewTimeout=300000000
 collectClientLogs="no"
 isLeaderKill="no"
-iteration=1
+iteration=$2
 
 pwd=$(pwd)
 . "${pwd}"/experiments/setup-3/ip.sh
@@ -28,7 +28,7 @@ remote_config_path="/home/${user_name}/mandator/binary/mandator-sporades.yml"
 
 echo "Starting test"
 
-output_path="${pwd}/experiments/${scenario}/logs/mandator/${arrival}/"
+output_path="${pwd}/experiments/${scenario}/logs/mandator/${arrival}/${iteration}/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"

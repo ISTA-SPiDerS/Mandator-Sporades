@@ -14,7 +14,7 @@ networkBatchTime=0
 pipelineLength=10
 collectClientLogs="no"
 isLeaderKill="no"
-iteration=1
+iteration=$2
 
 
 pwd=$(pwd)
@@ -28,7 +28,7 @@ remote_config_path="/home/${user_name}/mandator/binary/mandator-sporades.yml"
 
 echo "Starting test"
 
-output_path="${pwd}/experiments/${scenario}/logs/sporades/${arrival}/"
+output_path="${pwd}/experiments/${scenario}/logs/sporades/${arrival}/${iteration}/"
 rm -r "${output_path}" ; mkdir -p "${output_path}"
 
 echo "Removed old local log files"

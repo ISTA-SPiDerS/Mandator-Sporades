@@ -1,7 +1,7 @@
 import os
 import sys
 
-numReplicas = sys.argv[1]
+numReplicas = int(sys.argv[1])
 
 os.system("/bin/bash experiments/setup-"+str(numReplicas)+ "/setup.sh")
 
@@ -9,7 +9,7 @@ arrivals = []
 
 if numReplicas == 3:
     # upto 120k per client
-    arrivals = [100, 500, 1000, 2000, 5000, 10000, 20000, 40000, 60000, 80000, 100000, 120000, 150000]
+    arrivals = [100, 500, 1000, 2000, 5000, 10000, 20000, 40000, 60000, 80000, 100000, 120000, 150000, 180000, 200000, 250000]
 
 if numReplicas == 11:
     # upto 20k per client and then upto 35k for mandator
@@ -18,14 +18,17 @@ if numReplicas == 11:
 for iteration in [1,2,3]:
     for arrival in arrivals:
         # paxos
-        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/paxos_raft.sh "+str(arrival))
+        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/paxos_raft.sh "+str(arrival)+" "+str(iteration))
 
         # mandator
-        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/mandator.sh "+str(arrival))
+        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/mandator.sh "+str(arrival)+" "+str(iteration))
 
         # sporades
-        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/sporades.sh "+str(arrival))
+        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/sporades.sh "+str(arrival)+" "+str(iteration))
 
+        if numReplicas == 3:
+            # epaxos
+            os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/epaxos.sh "+str(arrival)+" "+str(iteration))
 
 
 
