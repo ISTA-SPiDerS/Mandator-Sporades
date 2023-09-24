@@ -36,9 +36,9 @@ plt.plot(di_func(mandator_throughput),         di_func(mandator_latency),       
 
 
 plt.xlabel('Throughput (x 1k cmd/sec)')
-plt.ylabel('Median Latency (ms)')
+plt.ylabel('median Latency (ms)')
 plt.legend(fancybox=True, framealpha=0)
-plt.savefig('experiments/scalability-11/logs/wan_throughput_median.pdf', bbox_inches='tight', pad_inches=0)
+plt.savefig('experiments/scalability-11/logs/wan_throughput_median-11.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
 plt.clf()
 plt.cla()
@@ -60,7 +60,7 @@ plt.plot(di_func(mandator_throughput),         di_func(mandator_tail),       'ko
 plt.xlabel('Throughput (x 1k cmd/sec)')
 plt.ylabel('99 percentile Latency (ms)')
 plt.legend(fancybox=True, framealpha=0)
-plt.savefig('experiments/scalability-11/logs/wan_throughput_tail.pdf', bbox_inches='tight', pad_inches=0)
+plt.savefig('experiments/scalability-11/logs/wan_throughput_tail-11.pdf', bbox_inches='tight', pad_inches=0)
 plt.close()
 plt.clf()
 plt.cla()
