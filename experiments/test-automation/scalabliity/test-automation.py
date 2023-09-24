@@ -18,17 +18,17 @@ if numReplicas == 11:
 for iteration in [1,2,3]:
     for arrival in arrivals:
         # paxos
-        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/paxos_raft.sh "+str(arrival)+" "+str(iteration))
+        os.system("/bin/bash experiments/scalability-bash/"+str(numReplicas)+"/paxos_raft.sh "+str(arrival)+" "+str(iteration))
 
         # mandator
-        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/mandator.sh "+str(arrival)+" "+str(iteration))
+        os.system("/bin/bash experiments/scalability-bash/"+str(numReplicas)+"/mandator.sh "+str(arrival)+" "+str(iteration))
 
         # sporades
-        os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/sporades.sh "+str(arrival)+" "+str(iteration))
+        os.system("/bin/bash experiments/scalability-bash/"+str(numReplicas)+"/sporades.sh "+str(arrival)+" "+str(iteration))
 
         if numReplicas == 3:
             # epaxos
-            os.system("/bin/bash experiments/scalability/"+str(numReplicas)+"/epaxos.sh "+str(arrival)+" "+str(iteration))
+            os.system("/bin/bash experiments/scalability-bash/"+str(numReplicas)+"/epaxos.sh "+str(arrival)+" "+str(iteration))
 
 
 
