@@ -1,4 +1,4 @@
-scenario="scalablity-3"
+scenario="scalability-3"
 arrival=$1
 replicaBatchSize=3000
 replicaBatchTime=5000
@@ -63,7 +63,7 @@ nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client1}  ".${remot
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client2}  ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --logFilePath ${remote_log_path} --name 22 --requestType request  --window ${clientWindow}" >${output_path}22.log &
 nohup sshpass ssh -o "StrictHostKeyChecking no" -i ${cert} ${client3}  ".${remote_ctl_path}  --arrivalRate ${arrival} --batchSize ${clientBatchSize} --batchTime ${clientBatchTime} --config ${remote_config_path} --logFilePath ${remote_log_path} --name 23 --requestType request  --window ${clientWindow}" >${output_path}23.log &
 
-sleep 115
+sleep 150
 
 echo "Completed Client[s]"
 

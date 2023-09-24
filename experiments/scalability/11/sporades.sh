@@ -1,4 +1,4 @@
-scenario="scalablity-11"
+scenario="scalability-11"
 arrival=$1
 replicaBatchSize=3000
 replicaBatchTime=5000
