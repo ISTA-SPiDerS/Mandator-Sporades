@@ -10,8 +10,11 @@ for iteration in [1, 2, 3]:
             # mandator
             os.system("/bin/bash experiments/request-size-bash/mandator.sh "+str(arrival)+" "+str(size)+" "+str(iteration))
 
-            # paxos
-            os.system("/bin/bash experiments/request-size-bash/paxos_raft.sh "+str(arrival)+" "+str(size)+" "+str(iteration))
+            if size == 256 and arrival >10000:
+                continue
+            else:
+                # paxos
+                os.system("/bin/bash experiments/request-size-bash/paxos_raft.sh "+str(arrival)+" "+str(size)+" "+str(iteration))
 
-            # sporades
-            os.system("/bin/bash experiments/request-size-bash/sporades.sh "+str(arrival)+" "+str(size)+" "+str(iteration))
+                # sporades
+                os.system("/bin/bash experiments/request-size-bash/sporades.sh "+str(arrival)+" "+str(size)+" "+str(iteration))
