@@ -29,7 +29,7 @@ records = [headers]
 def getEPaxosSummary():
     l_records = []
     for arrival in arrivals:
-        record = ["epaxos-exec", str(arrival * 5)]
+        record = ["epaxos-exec", str(arrival * int(numReplicas))]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
             root = "experiments/" + scenario+"/logs/epaxos/" +str(arrival)+"/" +str(iteration)+"/execution/"
@@ -44,7 +44,7 @@ def getEPaxosSummary():
         record.append(int(sum(remove_farthest_from_median(err, 1)) / (len(iterations) - 1)))
         l_records.append(record)
 
-        record = ["epaxos-commit", str(arrival * 5)]
+        record = ["epaxos-commit", str(arrival * int(numReplicas))]
         throughput, latency, nine9, err = [], [], [], []
         for iteration in iterations:
             root = "experiments/"+scenario+"/logs/epaxos/" +str(arrival)+"/"+str(iteration)+"/commit/"
@@ -66,7 +66,7 @@ def getPaxosRaftSummary():
     l_records = []
     for arrival in arrivals:
         for algo in ["paxos"]:
-            record = [algo, str(arrival * 5)]
+            record = [algo, str(arrival * int(numReplicas))]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
                 root = "experiments"+"/"+scenario+"/logs/paxos/"+str(arrival)+"/"+ str(iteration) +"/"
@@ -88,7 +88,7 @@ def getSporadesSummary():
     l_records = []
     for arrival in arrivals:
         for networkNatchTime in [0]:
-            record = ["sporades-"+str(networkNatchTime), str(arrival * 5)]
+            record = ["sporades-"+str(networkNatchTime), str(arrival * int(numReplicas))]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
                 root = "experiments/" +scenario+"/logs/sporades/"+str(arrival)+ "/" +str(iteration)+"/"
@@ -110,7 +110,7 @@ def getMandatorSummary():
     l_records = []
     for arrival in arrivals:
         for networkNatchTime in [30]:
-            record = ["mandator-sporades-"+str(networkNatchTime), str(arrival * 5)]
+            record = ["mandator-sporades-"+str(networkNatchTime), str(arrival * int(numReplicas))]
             throughput, latency, nine9, err = [], [], [], []
             for iteration in iterations:
                 root = "experiments/" +scenario+"/logs/mandator/"+str(arrival)+ "/"+str(iteration)+"/"
